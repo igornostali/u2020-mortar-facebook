@@ -19,4 +19,10 @@ public class AndroidModule {
     DrawerPresenter provideDrawerPresenter() {
         return new DrawerPresenter();
     }
+
+    @Provides 
+    @Singleton 
+    ActivityResultRegistrar provideIntentLauncher(ActivityResultPresenter presenter) {
+        return presenter;
+    }
 }
