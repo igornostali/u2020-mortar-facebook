@@ -16,11 +16,13 @@ public class MockGalleryService implements GalleryService {
 
     private final ServerDatabase serverDatabase;
 
-    @Inject MockGalleryService(ServerDatabase serverDatabase) {
+    @Inject
+    MockGalleryService(ServerDatabase serverDatabase) {
         this.serverDatabase = serverDatabase;
     }
 
-    @Override public Observable<Gallery> listGallery(Section section, Sort sort, int page) {
+    @Override
+    public Observable<Gallery> listGallery(Section section, Sort sort, int page) {
         // Fetch desired section.
         List<Image> images = serverDatabase.getImagesForSection(section);
         if (images == null) {

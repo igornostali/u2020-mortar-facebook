@@ -7,12 +7,15 @@ import dagger.Provides;
 
 @Module(injects = {}, library = true)
 public class AndroidModule {
-    @Provides @Singleton
+
+    @Provides
+    @Singleton
     ActionBarPresenter provideActionBarPresenter() {
         return new ActionBarPresenter();
     }
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     DrawerPresenter provideDrawerPresenter() {
         return new DrawerPresenter();
     }

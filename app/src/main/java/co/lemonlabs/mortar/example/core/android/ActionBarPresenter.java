@@ -25,11 +25,50 @@ import rx.functions.Action0;
  * Allows shared configuration of the Android ActionBar.
  */
 public class ActionBarPresenter extends Presenter<ActionBarPresenter.View> {
+    private Config config;
+
+    ActionBarPresenter() {
+    }
+
+    @Override
+    protected MortarScope extractScope(View view) {
+        return view.getMortarScope();
+    }
+
+    @Override
+    public void onLoad(Bundle savedInstanceState) {
+        super.onLoad(savedInstanceState);
+        if (config != null) update();
+    }
+
+    public Config getConfig() {
+        return config;
+    }
+
+    public void setConfig(Config config) {
+        this.config = config;
+        update();
+    }
+
+    private void update() {
+        View view = getView();
+        if (view == null) return;
+
+        view.setShowHomeEnabled(config.showHomeEnabled);
+        view.setUpButtonEnabled(config.upButtonEnabled);
+        view.setTitle(config.title);
+        view.setMenu(config.action);
+    }
+
     public interface View {
         MortarScope getMortarScope();
+
         void setShowHomeEnabled(boolean enabled);
+
         void setUpButtonEnabled(boolean enabled);
+
         void setTitle(CharSequence title);
+
         void setMenu(MenuAction action);
     }
 
@@ -60,39 +99,5 @@ public class ActionBarPresenter extends Presenter<ActionBarPresenter.View> {
             this.title = title;
             this.action = action;
         }
-    }
-
-    private Config config;
-
-    ActionBarPresenter() {
-    }
-
-    @Override protected MortarScope extractScope(View view) {
-        return view.getMortarScope();
-    }
-
-    @Override public void onLoad(Bundle savedInstanceState) {
-        super.onLoad(savedInstanceState);
-        if (config != null) update();
-    }
-
-    public void setConfig(Config config) {
-        this.config = config;
-        update();
-    }
-
-    public Config getConfig() {
-        return config;
-    }
-
-
-    private void update() {
-        View view = getView();
-        if (view == null) return;
-
-        view.setShowHomeEnabled(config.showHomeEnabled);
-        view.setUpButtonEnabled(config.upButtonEnabled);
-        view.setTitle(config.title);
-        view.setMenu(config.action);
     }
 }

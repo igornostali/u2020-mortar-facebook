@@ -7,22 +7,6 @@ import mortar.Presenter;
 
 public class DrawerPresenter extends Presenter<DrawerPresenter.View> {
 
-    public interface View {
-        MortarScope getMortarScope();
-        void setDrawerIndicatorEnabled(boolean enabled);
-        void setDrawerLockMode(int mode);
-    }
-
-    public static class Config {
-        public final boolean indicatorEnabled;
-        public final int     lockMode;
-
-        public Config(boolean indicatorEnabled, int lockMode) {
-            this.indicatorEnabled = indicatorEnabled;
-            this.lockMode = lockMode;
-        }
-    }
-
     private Config config;
 
     @Override
@@ -36,13 +20,13 @@ public class DrawerPresenter extends Presenter<DrawerPresenter.View> {
         if (config != null) update();
     }
 
+    public Config getConfig() {
+        return config;
+    }
+
     public void setConfig(Config config) {
         this.config = config;
         update();
-    }
-
-    public Config getConfig() {
-        return config;
     }
 
     private void update() {
@@ -50,6 +34,24 @@ public class DrawerPresenter extends Presenter<DrawerPresenter.View> {
         if (view == null) return;
         view.setDrawerIndicatorEnabled(config.indicatorEnabled);
         view.setDrawerLockMode(config.lockMode);
+    }
+
+    public interface View {
+        MortarScope getMortarScope();
+
+        void setDrawerIndicatorEnabled(boolean enabled);
+
+        void setDrawerLockMode(int mode);
+    }
+
+    public static class Config {
+        public final boolean indicatorEnabled;
+        public final int     lockMode;
+
+        public Config(boolean indicatorEnabled, int lockMode) {
+            this.indicatorEnabled = indicatorEnabled;
+            this.lockMode = lockMode;
+        }
     }
 }
 

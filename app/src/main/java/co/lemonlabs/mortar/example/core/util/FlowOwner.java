@@ -31,7 +31,8 @@ import mortar.ViewPresenter;
  * Base class for all presenters that manage a {@link flow.Flow}.
  */
 public abstract class FlowOwner<S extends Blueprint, V extends View & CanShowScreen<S> & CanShowDrawer<S>>
-    extends ViewPresenter<V> implements Flow.Listener {
+        extends ViewPresenter<V>
+        implements Flow.Listener {
 
     private static final String FLOW_KEY = "FLOW_KEY";
 

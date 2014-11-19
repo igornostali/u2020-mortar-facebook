@@ -6,9 +6,9 @@ import retrofit.http.Path;
 import rx.Observable;
 
 public interface GalleryService {
-  @GET("/gallery/{section}/{sort}/{page}") //
-  Observable<Gallery> listGallery( //
-                                   @Path("section") Section section, //
-                                   @Path("sort") Sort sort, //
-                                   @Path("page") int page);
+
+    @GET("/gallery/{section}/{sort}/{page}")
+    Observable<Gallery> listGallery(
+            @Path("section") Section section, @Path("sort") Sort sort, @Path("page") int page
+    );
 }

@@ -16,41 +16,45 @@ import javax.inject.Singleton;
 @Singleton
 public class IdlingDownloaderWrapper implements Downloader, IdlingResource {
 
-    @Inject Downloader downloader;
-
     private final List<ResourceCallback> callbacks;
+    private final AtomicInteger          counter;
 
-    private final AtomicInteger counter;
+    @Inject       Downloader             downloader;
 
-    @Inject public IdlingDownloaderWrapper(Downloader downloader) {
+    @Inject
+    public IdlingDownloaderWrapper(Downloader downloader) {
         this.downloader = downloader;
         this.callbacks = new ArrayList<>();
         this.counter = new AtomicInteger(0);
     }
 
-    @Override public Response load(Uri uri, boolean localCacheOnly) throws IOException {
+    @Override
+    public Response load(Uri uri, boolean localCacheOnly) throws IOException {
         counter.incrementAndGet();
         try {
             Response response = downloader.load(uri, localCacheOnly);
             counter.decrementAndGet();
             notifyIdle();
             return response;
-        } catch(IOException e) {
+        } catch (IOException e) {
             counter.decrementAndGet();
             notifyIdle();
             throw e;
         }
     }
 
-    @Override public String getName() {
+    @Override
+    public String getName() {
         return this.getClass().getName() + hashCode();
     }
 
-    @Override public boolean isIdleNow() {
+    @Override
+    public boolean isIdleNow() {
         return counter.get() == 0;
     }
 
-    @Override public void registerIdleTransitionCallback(ResourceCallback resourceCallback) {
+    @Override
+    public void registerIdleTransitionCallback(ResourceCallback resourceCallback) {
         callbacks.add(resourceCallback);
     }
 

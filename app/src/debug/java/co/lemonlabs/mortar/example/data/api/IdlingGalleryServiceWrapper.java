@@ -24,13 +24,12 @@ import rx.functions.Action1;
 @Singleton
 public class IdlingGalleryServiceWrapper implements GalleryService, IdlingResource {
 
-    @Inject GalleryService api;
-
-    private final AtomicInteger counter;
-
+    private final AtomicInteger          counter;
     private final List<ResourceCallback> callbacks;
+    @Inject       GalleryService         api;
 
-    @Inject public IdlingGalleryServiceWrapper(Application app, GalleryService api) {
+    @Inject
+    public IdlingGalleryServiceWrapper(Application app, GalleryService api) {
         this.api = api;
         this.callbacks = new ArrayList<>();
         this.counter = new AtomicInteger(0);
@@ -42,15 +41,18 @@ public class IdlingGalleryServiceWrapper implements GalleryService, IdlingResour
         return api.listGallery(section, sort, page).doOnNext(new IdlingAction<Gallery>());
     }
 
-    @Override public String getName() {
+    @Override
+    public String getName() {
         return this.getClass().getName() + hashCode();
     }
 
-    @Override public boolean isIdleNow() {
+    @Override
+    public boolean isIdleNow() {
         return counter.get() == 0;
     }
 
-    @Override public void registerIdleTransitionCallback(ResourceCallback resourceCallback) {
+    @Override
+    public void registerIdleTransitionCallback(ResourceCallback resourceCallback) {
         callbacks.add(resourceCallback);
     }
 
@@ -63,7 +65,8 @@ public class IdlingGalleryServiceWrapper implements GalleryService, IdlingResour
     }
 
     private class IdlingAction<T> implements Action1<T> {
-        @Override public void call(T o) {
+        @Override
+        public void call(T o) {
             counter.decrementAndGet();
             notifyIdle();
         }

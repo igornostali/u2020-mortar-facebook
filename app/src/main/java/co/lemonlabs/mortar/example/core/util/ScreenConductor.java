@@ -102,15 +102,16 @@ public class ScreenConductor<S extends Blueprint> implements CanShowScreen<S>, C
             }
 
             if (oldChild != null) {
-                 // Settings animator for each view and removing the old view
-                 // after animation ends
+                // Settings animator for each view and removing the old view
+                // after animation ends
                 if (transitions != null) {
                     transitions.out.setTarget(oldChild);
                     transitions.in.setTarget(newChild);
                     screenTransition = new AnimatorSet();
                     screenTransition.playTogether(transitions.out, transitions.in);
                     screenTransition.addListener(new SimpleAnimatorListener() {
-                        @Override public void onAnimationEnd(Animator animation) {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
                             container.removeView(oldChild);
                         }
                     });
@@ -130,7 +131,8 @@ public class ScreenConductor<S extends Blueprint> implements CanShowScreen<S>, C
             // for transitions forward to make feel more natural
             if (direction == Flow.Direction.FORWARD) {
                 container.post(new Runnable() {
-                    @Override public void run() {
+                    @Override
+                    public void run() {
                         container.bringChildToFront(newChild);
                         container.requestLayout();
                         container.invalidate();
@@ -153,8 +155,8 @@ public class ScreenConductor<S extends Blueprint> implements CanShowScreen<S>, C
 
             // Set some basic layout parameters so the drawer works
             DrawerLayout.LayoutParams params = new DrawerLayout.LayoutParams(
-                context.getResources().getDimensionPixelSize(R.dimen.navigation_drawer_width),
-                ViewGroup.LayoutParams.MATCH_PARENT
+                    context.getResources().getDimensionPixelSize(R.dimen.navigation_drawer_width),
+                    ViewGroup.LayoutParams.MATCH_PARENT
             );
             params.gravity = Gravity.LEFT;
             newChild.setLayoutParams(params);

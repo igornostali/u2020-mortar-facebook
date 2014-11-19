@@ -19,9 +19,9 @@ import mortar.Mortar;
 
 public class CoreView extends DrawerLayout implements CanShowScreen<Blueprint>, CanShowDrawer<Blueprint> {
 
-    @Inject CorePresenter.Presenter presenter;
-
     private final ScreenConductor<Blueprint> screenMaestro;
+    @Inject
+                  CorePresenter.Presenter    presenter;
     private       ActionBarDrawerToggle      drawerToggle;
 
     public CoreView(Context context, AttributeSet attrs) {
@@ -59,11 +59,11 @@ public class CoreView extends DrawerLayout implements CanShowScreen<Blueprint>, 
 
     public void initNavigationDrawer() {
         drawerToggle = new ActionBarDrawerToggle(
-            (Activity) getContext(),
-            this,
-            R.drawable.ic_drawer,
-            R.string.navigation_drawer_open,
-            R.string.navigation_drawer_close
+                (Activity) getContext(),
+                this,
+                R.drawable.ic_drawer,
+                R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close
         ) {
             @Override
             public void onDrawerClosed(View drawerView) {

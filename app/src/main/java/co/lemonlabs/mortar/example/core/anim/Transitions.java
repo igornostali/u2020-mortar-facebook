@@ -26,9 +26,7 @@ public final class Transitions {
 
     public static final int NONE = R.animator.empty;
 
-    public static class Animators {
-        public Animator in;
-        public Animator out;
+    private Transitions() {
     }
 
     /**
@@ -54,7 +52,6 @@ public final class Transitions {
     }
 
     private static Animators createLayoutTransition(Context context, int[] transitionIds, Flow.Direction direction) {
-
         final boolean forward = direction == Flow.Direction.FORWARD;
         final int addAnimatorId = forward ? transitionIds[0] : transitionIds[2];
         final int removeAnimatorId = forward ? transitionIds[1] : transitionIds[3];
@@ -72,13 +69,13 @@ public final class Transitions {
         Transition transitionScreen = screenType.getAnnotation(Transition.class);
         if (transitionScreen == null) {
             throw new IllegalArgumentException(
-                String.format("Class %s does not have %s annotation", screenType.getClass().getSimpleName(), Transition.class.getSimpleName())
+                    String.format("Class %s does not have %s annotation", screenType.getClass().getSimpleName(), Transition.class.getSimpleName())
             );
         }
 
         if (transitionScreen.value().length != 4) {
             throw new IllegalArgumentException(
-                String.format("Must provide 4 animation resource values for %s", Transition.class.getSimpleName())
+                    String.format("Must provide 4 animation resource values for %s", Transition.class.getSimpleName())
             );
         }
 
@@ -92,8 +89,9 @@ public final class Transitions {
         return AnimatorInflater.loadAnimator(context, animationId);
     }
 
-
-    private Transitions() {
+    public static class Animators {
+        public Animator in;
+        public Animator out;
     }
 
 }

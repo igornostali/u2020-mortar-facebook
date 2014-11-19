@@ -10,12 +10,32 @@ import mortar.Blueprint;
 
 public abstract class TransitionScreen extends Screen implements Blueprint, Parcelable {
 
+    public static <T extends TransitionScreen> Parcelable.Creator<T> CREATOR(final Class<T> screenClass) {
+        return new ScreenCreator<T>() {
+            @Override
+            protected T doCreateFromParcel(Parcel source) {
+                try {
+                    return screenClass.newInstance();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
-    @Override public final int describeContents() {
+            @Override
+            public T[] newArray(int size) {
+                //noinspection unchecked
+                return (T[]) Array.newInstance(screenClass, size);
+            }
+        };
+    }
+
+    @Override
+    public final int describeContents() {
         return 0;
     }
 
-    @Override public final void writeToParcel(Parcel parcel, int i) {
+    @Override
+    public final void writeToParcel(Parcel parcel, int i) {
         //noinspection unchecked
         SparseArray<Object> sparseArray = (SparseArray) getViewState();
         int[] transitions = getTransitions();
@@ -31,26 +51,10 @@ public abstract class TransitionScreen extends Screen implements Blueprint, Parc
 
     }
 
-    public static <T extends TransitionScreen> Parcelable.Creator<T> CREATOR(final Class<T> screenClass) {
-        return new ScreenCreator<T>() {
-            @Override protected T doCreateFromParcel(Parcel source) {
-                try {
-                    return screenClass.newInstance();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            @Override public T[] newArray(int size) {
-                //noinspection unchecked
-                return (T[]) Array.newInstance(screenClass, size);
-            }
-        };
-    }
-
     public static abstract class ScreenCreator<T extends TransitionScreen> implements Parcelable.Creator<T> {
 
-        @Override public final T createFromParcel(Parcel source) {
+        @Override
+        public final T createFromParcel(Parcel source) {
             ClassLoader classLoader = getClassLoader();
             //noinspection unchecked
             SparseArray<Parcelable> sparseArray = source.readSparseArray(classLoader);

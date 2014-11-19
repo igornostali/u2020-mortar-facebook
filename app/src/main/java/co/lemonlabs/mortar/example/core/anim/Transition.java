@@ -14,10 +14,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <li>  View to be restored when popping the backstack</li>
  * <li> View to be popped from the backstack</li>
  * </ol>
- *
+ * <p/>
  * If no animation should be run, use an empty animator:  {@link Transitions#NONE}
  */
-@Retention(RUNTIME) @Target(TYPE)
+@Target(TYPE)
+@Retention(RUNTIME)
 public @interface Transition {
     int[] value();
 }

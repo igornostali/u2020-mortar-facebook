@@ -16,15 +16,15 @@ import dagger.Provides;
 import flow.Parcer;
 
 @Module(
-    includes = {
-        UiModule.class,
-        DataModule.class,
-        AndroidModule.class
-    },
-    injects = {
-        U2020App.class
-    },
-    library = true
+        includes = {
+                UiModule.class,
+                DataModule.class,
+                AndroidModule.class
+        },
+        injects = {
+                U2020App.class
+        },
+        library = true
 )
 public final class U2020Module {
     private final U2020App app;
@@ -33,16 +33,21 @@ public final class U2020Module {
         this.app = app;
     }
 
-    @Provides @Singleton Application provideApplication() {
+    @Provides
+    @Singleton
+    Application provideApplication() {
         return app;
     }
 
-    @Provides @Singleton Gson provideGson() {
-        return new GsonBuilder()
-            .create();
+    @Provides
+    @Singleton
+    Gson provideGson() {
+        return new GsonBuilder().create();
     }
 
-    @Provides @Singleton Parcer<Object> provideParcer() {
+    @Provides
+    @Singleton
+    Parcer<Object> provideParcer() {
         return new ScreenParcer<>();
     }
 }

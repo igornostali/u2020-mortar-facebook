@@ -30,41 +30,22 @@ public class CorePresenter implements Blueprint {
         this.scopeName = scopeName;
     }
 
-    @Override public String getMortarScopeName() {
+    @Override
+    public String getMortarScopeName() {
         return scopeName;
     }
 
-    @Override public Object getDaggerModule() {
+    @Override
+    public Object getDaggerModule() {
         return new Module();
-    }
-
-    @dagger.Module(
-        injects = {
-            CoreView.class
-        },
-        addsTo = U2020Module.class,
-        library = true
-    )
-    public final class Module {
-
-        public Module() {
-
-        }
-
-        @Provides @MainScope Flow provideFlow(Presenter presenter) {
-            return presenter.getFlow();
-        }
-
-        @Provides Context providesContext(Application app) {
-            return app;
-        }
     }
 
     @Singleton
     public static class Presenter extends FlowOwner<Blueprint, CoreView> {
         private final ActionBarPresenter actionBarOwner;
 
-        @Inject Presenter(Parcer<Object> flowParcer, ActionBarPresenter actionBarOwner) {
+        @Inject
+        Presenter(Parcer<Object> flowParcer, ActionBarPresenter actionBarOwner) {
             super(flowParcer);
             this.actionBarOwner = actionBarOwner;
         }
@@ -74,9 +55,35 @@ public class CorePresenter implements Blueprint {
             return new GalleryScreen();
         }
 
-        @Override protected Blueprint getDrawerScreen() {
+        @Override
+        protected Blueprint getDrawerScreen() {
             return new DrawerScreen();
         }
 
+    }
+
+    @dagger.Module(
+            injects = {
+                    CoreView.class
+            },
+            addsTo = U2020Module.class,
+            library = true
+    )
+    public final class Module {
+
+        public Module() {
+
+        }
+
+        @Provides
+        @MainScope
+        Flow provideFlow(Presenter presenter) {
+            return presenter.getFlow();
+        }
+
+        @Provides
+        Context providesContext(Application app) {
+            return app;
+        }
     }
 }
