@@ -7,9 +7,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class Views {
 
-    private Views() {}
-
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
+
+    private Views() {
+    }
 
     /**
      * Generate a value suitable for use in {@link #setId(int)}.

@@ -31,7 +31,8 @@ public class GalleryDatabase {
     private final Map<Section, List<Image>>                 galleryCache    = new LinkedHashMap<>();
     private final Map<Section, PublishSubject<List<Image>>> galleryRequests = new LinkedHashMap<>();
 
-    @Inject public GalleryDatabase(GalleryService galleryService) {
+    @Inject
+    public GalleryDatabase(GalleryService galleryService) {
         this.galleryService = galleryService;
     }
 
@@ -55,32 +56,36 @@ public class GalleryDatabase {
         Subscription subscription = galleryRequest.subscribe(observer);
 
         galleryRequest.subscribe(new EndObserver<List<Image>>() {
-            @Override public void onEnd() {
+            @Override
+            public void onEnd() {
                 galleryRequests.remove(section);
             }
 
-            @Override public void onNext(List<Image> images) {
+            @Override
+            public void onNext(List<Image> images) {
                 galleryCache.put(section, images);
             }
         });
 
         // Warning: Gross shit follows! Where you at Java 8?
         galleryService.listGallery(section, Sort.VIRAL, 1)
-            .map(new GalleryToImageList())
-            .flatMap(new Func1<List<Image>, Observable<Image>>() {
-                @Override public Observable<Image> call(List<Image> images) {
-                    return Observable.from(images);
-                }
-            })
-            .filter(new Func1<Image, Boolean>() {
-                @Override public Boolean call(Image image) {
-                    return !image.is_album; // No albums.
-                }
-            })
-            .toList()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(galleryRequest);
+                      .map(new GalleryToImageList())
+                      .flatMap(new Func1<List<Image>, Observable<Image>>() {
+                          @Override
+                          public Observable<Image> call(List<Image> images) {
+                              return Observable.from(images);
+                          }
+                      })
+                      .filter(new Func1<Image, Boolean>() {
+                          @Override
+                          public Boolean call(Image image) {
+                              return !image.is_album; // No albums.
+                          }
+                      })
+                      .toList()
+                      .subscribeOn(Schedulers.io())
+                      .observeOn(AndroidSchedulers.mainThread())
+                      .subscribe(galleryRequest);
 
         return subscription;
     }

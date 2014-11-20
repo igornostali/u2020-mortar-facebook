@@ -167,37 +167,6 @@ public class DebugAppContainer implements AppContainer {
         this.restAdapter = restAdapter;
     }
 
-    private static String getDensityString(DisplayMetrics displayMetrics) {
-        switch (displayMetrics.densityDpi) {
-            case DisplayMetrics.DENSITY_LOW:
-                return "ldpi";
-            case DisplayMetrics.DENSITY_MEDIUM:
-                return "mdpi";
-            case DisplayMetrics.DENSITY_HIGH:
-                return "hdpi";
-            case DisplayMetrics.DENSITY_XHIGH:
-                return "xhdpi";
-            case DisplayMetrics.DENSITY_XXHIGH:
-                return "xxhdpi";
-            case DisplayMetrics.DENSITY_XXXHIGH:
-                return "xxxhdpi";
-            case DisplayMetrics.DENSITY_TV:
-                return "tvdpi";
-            default:
-                return "unknown";
-        }
-    }
-
-    private static String getSizeString(long bytes) {
-        String[] units = new String[] {"B", "KB", "MB", "GB"};
-        int unit = 0;
-        while (bytes >= 1024) {
-            bytes /= 1024;
-            unit += 1;
-        }
-        return bytes + units[unit];
-    }
-
     @Override
     public ViewGroup get(final Activity activity, U2020App app) {
         this.app = app;
@@ -245,6 +214,106 @@ public class DebugAppContainer implements AppContainer {
         setupPicassoSection();
 
         return content;
+    }
+
+    @OnClick(R.id.debug_network_endpoint_edit)
+    void onEditEndpointClicked() {
+        Timber.d("Prompting to edit custom endpoint URL.");
+        // Pass in the currently selected position since we are merely editing.
+        showCustomEndpointDialog(endpointView.getSelectedItemPosition(), networkEndpoint.get());
+    }
+
+    private static String getDensityString(DisplayMetrics displayMetrics) {
+        switch (displayMetrics.densityDpi) {
+            case DisplayMetrics.DENSITY_LOW:
+                return "ldpi";
+            case DisplayMetrics.DENSITY_MEDIUM:
+                return "mdpi";
+            case DisplayMetrics.DENSITY_HIGH:
+                return "hdpi";
+            case DisplayMetrics.DENSITY_XHIGH:
+                return "xhdpi";
+            case DisplayMetrics.DENSITY_XXHIGH:
+                return "xxhdpi";
+            case DisplayMetrics.DENSITY_XXXHIGH:
+                return "xxxhdpi";
+            case DisplayMetrics.DENSITY_TV:
+                return "tvdpi";
+            default:
+                return "unknown";
+        }
+    }
+
+    private static String getSizeString(long bytes) {
+        String[] units = new String[] { "B", "KB", "MB", "GB" };
+        int unit = 0;
+        while (bytes >= 1024) {
+            bytes /= 1024;
+            unit += 1;
+        }
+        return bytes + units[unit];
+    }
+
+    private void applyAnimationSpeed(int multiplier) {
+        try {
+            Method method = ValueAnimator.class.getDeclaredMethod("setDurationScale", float.class);
+            method.invoke(null, (float) multiplier);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to apply animation speed.", e);
+        }
+    }
+
+    private void refreshPicassoStats() {
+        StatsSnapshot snapshot = picasso.getSnapshot();
+        String size = getSizeString(snapshot.size);
+        String total = getSizeString(snapshot.maxSize);
+        int percentage = (int) ((1f * snapshot.size / snapshot.maxSize) * 100);
+        picassoCacheSizeView.setText(size + " / " + total + " (" + percentage + "%)");
+        picassoCacheHitView.setText(String.valueOf(snapshot.cacheHits));
+        picassoCacheMissView.setText(String.valueOf(snapshot.cacheMisses));
+        picassoDecodedView.setText(String.valueOf(snapshot.originalBitmapCount));
+        picassoDecodedTotalView.setText(getSizeString(snapshot.totalOriginalBitmapSize));
+        picassoDecodedAvgView.setText(getSizeString(snapshot.averageOriginalBitmapSize));
+        picassoTransformedView.setText(String.valueOf(snapshot.transformedBitmapCount));
+        picassoTransformedTotalView.setText(getSizeString(snapshot.totalTransformedBitmapSize));
+        picassoTransformedAvgView.setText(getSizeString(snapshot.averageTransformedBitmapSize));
+    }
+
+    private void setEndpointAndRelaunch(String endpoint) {
+        Timber.d("Setting network endpoint to %s", endpoint);
+        networkEndpoint.set(endpoint);
+
+        Intent newApp = new Intent(app, MainActivity.class);
+        newApp.setFlags(FLAG_ACTIVITY_CLEAR_TASK | FLAG_ACTIVITY_NEW_TASK);
+        app.startActivity(newApp);
+        app.rebuildOjectGraphAndInject();
+    }
+
+    private void setupBuildSection() {
+        buildNameView.setText(BuildConfig.VERSION_NAME);
+        buildCodeView.setText(String.valueOf(BuildConfig.VERSION_CODE));
+        buildShaView.setText(BuildConfig.GIT_SHA);
+
+        try {
+            // Parse ISO8601-format time into local time.
+            DateFormat inFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+            inFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            Date buildTime = inFormat.parse(BuildConfig.BUILD_TIME);
+            buildDateView.setText(DATE_DISPLAY_FORMAT.format(buildTime));
+        } catch (ParseException e) {
+            throw new RuntimeException("Unable to decode build time: " + BuildConfig.BUILD_TIME, e);
+        }
+    }
+
+    private void setupDeviceSection() {
+        DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
+        String densityBucket = getDensityString(displayMetrics);
+        deviceMakeView.setText(Strings.truncateAt(Build.MANUFACTURER, 20));
+        deviceModelView.setText(Strings.truncateAt(Build.MODEL, 20));
+        deviceResolutionView.setText(displayMetrics.heightPixels + "x" + displayMetrics.widthPixels);
+        deviceDensityView.setText(displayMetrics.densityDpi + "dpi (" + densityBucket + ")");
+        deviceReleaseView.setText(Build.VERSION.RELEASE);
+        deviceApiView.setText(String.valueOf(Build.VERSION.SDK_INT));
     }
 
     private void setupNetworkSection() {
@@ -397,11 +466,20 @@ public class DebugAppContainer implements AppContainer {
         });
     }
 
-    @OnClick(R.id.debug_network_endpoint_edit)
-    void onEditEndpointClicked() {
-        Timber.d("Prompting to edit custom endpoint URL.");
-        // Pass in the currently selected position since we are merely editing.
-        showCustomEndpointDialog(endpointView.getSelectedItemPosition(), networkEndpoint.get());
+    private void setupPicassoSection() {
+        boolean picassoDebuggingValue = picassoDebugging.get();
+        picasso.setDebugging(picassoDebuggingValue);
+        picassoIndicatorView.setChecked(picassoDebuggingValue);
+        picassoIndicatorView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton button, boolean isChecked) {
+                Timber.d("Setting Picasso debugging to " + isChecked);
+                picasso.setDebugging(isChecked);
+                picassoDebugging.set(isChecked);
+            }
+        });
+
+        refreshPicassoStats();
     }
 
     private void setupUserInterfaceSection() {
@@ -488,72 +566,40 @@ public class DebugAppContainer implements AppContainer {
         });
     }
 
-    private void setupBuildSection() {
-        buildNameView.setText(BuildConfig.VERSION_NAME);
-        buildCodeView.setText(String.valueOf(BuildConfig.VERSION_CODE));
-        buildShaView.setText(BuildConfig.GIT_SHA);
+    private void showCustomEndpointDialog(final int originalSelection, String defaultUrl) {
+        View view = LayoutInflater.from(app).inflate(R.layout.debug_drawer_network_endpoint, null);
+        final EditText url = findById(view, R.id.debug_drawer_network_endpoint_url);
+        url.setText(defaultUrl);
+        url.setSelection(url.length());
 
-        try {
-            // Parse ISO8601-format time into local time.
-            DateFormat inFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
-            inFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-            Date buildTime = inFormat.parse(BuildConfig.BUILD_TIME);
-            buildDateView.setText(DATE_DISPLAY_FORMAT.format(buildTime));
-        } catch (ParseException e) {
-            throw new RuntimeException("Unable to decode build time: " + BuildConfig.BUILD_TIME, e);
-        }
-    }
-
-    private void setupDeviceSection() {
-        DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
-        String densityBucket = getDensityString(displayMetrics);
-        deviceMakeView.setText(Strings.truncateAt(Build.MANUFACTURER, 20));
-        deviceModelView.setText(Strings.truncateAt(Build.MODEL, 20));
-        deviceResolutionView.setText(displayMetrics.heightPixels + "x" + displayMetrics.widthPixels);
-        deviceDensityView.setText(displayMetrics.densityDpi + "dpi (" + densityBucket + ")");
-        deviceReleaseView.setText(Build.VERSION.RELEASE);
-        deviceApiView.setText(String.valueOf(Build.VERSION.SDK_INT));
-    }
-
-    private void setupPicassoSection() {
-        boolean picassoDebuggingValue = picassoDebugging.get();
-        picasso.setDebugging(picassoDebuggingValue);
-        picassoIndicatorView.setChecked(picassoDebuggingValue);
-        picassoIndicatorView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton button, boolean isChecked) {
-                Timber.d("Setting Picasso debugging to " + isChecked);
-                picasso.setDebugging(isChecked);
-                picassoDebugging.set(isChecked);
-            }
-        });
-
-        refreshPicassoStats();
-    }
-
-    private void refreshPicassoStats() {
-        StatsSnapshot snapshot = picasso.getSnapshot();
-        String size = getSizeString(snapshot.size);
-        String total = getSizeString(snapshot.maxSize);
-        int percentage = (int) ((1f * snapshot.size / snapshot.maxSize) * 100);
-        picassoCacheSizeView.setText(size + " / " + total + " (" + percentage + "%)");
-        picassoCacheHitView.setText(String.valueOf(snapshot.cacheHits));
-        picassoCacheMissView.setText(String.valueOf(snapshot.cacheMisses));
-        picassoDecodedView.setText(String.valueOf(snapshot.originalBitmapCount));
-        picassoDecodedTotalView.setText(getSizeString(snapshot.totalOriginalBitmapSize));
-        picassoDecodedAvgView.setText(getSizeString(snapshot.averageOriginalBitmapSize));
-        picassoTransformedView.setText(String.valueOf(snapshot.transformedBitmapCount));
-        picassoTransformedTotalView.setText(getSizeString(snapshot.totalTransformedBitmapSize));
-        picassoTransformedAvgView.setText(getSizeString(snapshot.averageTransformedBitmapSize));
-    }
-
-    private void applyAnimationSpeed(int multiplier) {
-        try {
-            Method method = ValueAnimator.class.getDeclaredMethod("setDurationScale", float.class);
-            method.invoke(null, (float) multiplier);
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to apply animation speed.", e);
-        }
+        new AlertDialog.Builder(activity) //
+                .setTitle("Set Network Endpoint")
+                .setView(view)
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int i) {
+                        endpointView.setSelection(originalSelection);
+                        dialog.cancel();
+                    }
+                })
+                .setPositiveButton("Use", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int i) {
+                        String theUrl = url.getText().toString();
+                        if (!Strings.isBlank(theUrl)) {
+                            setEndpointAndRelaunch(theUrl);
+                        } else {
+                            endpointView.setSelection(originalSelection);
+                        }
+                    }
+                })
+                .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialogInterface) {
+                        endpointView.setSelection(originalSelection);
+                    }
+                })
+                .show();
     }
 
     private void showNewNetworkProxyDialog(final ProxyAdapter proxyAdapter) {
@@ -598,51 +644,5 @@ public class DebugAppContainer implements AppContainer {
                     }
                 })
                 .show();
-    }
-
-    private void showCustomEndpointDialog(final int originalSelection, String defaultUrl) {
-        View view = LayoutInflater.from(app).inflate(R.layout.debug_drawer_network_endpoint, null);
-        final EditText url = findById(view, R.id.debug_drawer_network_endpoint_url);
-        url.setText(defaultUrl);
-        url.setSelection(url.length());
-
-        new AlertDialog.Builder(activity) //
-                .setTitle("Set Network Endpoint")
-                .setView(view)
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int i) {
-                        endpointView.setSelection(originalSelection);
-                        dialog.cancel();
-                    }
-                })
-                .setPositiveButton("Use", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int i) {
-                        String theUrl = url.getText().toString();
-                        if (!Strings.isBlank(theUrl)) {
-                            setEndpointAndRelaunch(theUrl);
-                        } else {
-                            endpointView.setSelection(originalSelection);
-                        }
-                    }
-                })
-                .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    @Override
-                    public void onCancel(DialogInterface dialogInterface) {
-                        endpointView.setSelection(originalSelection);
-                    }
-                })
-                .show();
-    }
-
-    private void setEndpointAndRelaunch(String endpoint) {
-        Timber.d("Setting network endpoint to %s", endpoint);
-        networkEndpoint.set(endpoint);
-
-        Intent newApp = new Intent(app, MainActivity.class);
-        newApp.setFlags(FLAG_ACTIVITY_CLEAR_TASK | FLAG_ACTIVITY_NEW_TASK);
-        app.startActivity(newApp);
-        app.rebuildOjectGraphAndInject();
     }
 }

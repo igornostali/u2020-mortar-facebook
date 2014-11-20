@@ -11,11 +11,6 @@ public enum ApiEndpoints {
     public final String name;
     public final String url;
 
-    ApiEndpoints(String name, String url) {
-        this.name = name;
-        this.url = url;
-    }
-
     public static ApiEndpoints from(String endpoint) {
         for (ApiEndpoints value : values()) {
             if (value.url != null && value.url.equals(endpoint)) {
@@ -32,5 +27,10 @@ public enum ApiEndpoints {
     @Override
     public String toString() {
         return name;
+    }
+
+    ApiEndpoints(String name, String url) {
+        this.name = name;
+        this.url = url;
     }
 }

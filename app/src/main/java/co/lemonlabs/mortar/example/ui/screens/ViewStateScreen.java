@@ -27,9 +27,22 @@ import rx.functions.Action0;
 import static java.lang.Integer.MAX_VALUE;
 
 @Layout(R.layout.view_state)
-@Transition({R.animator.slide_in_right, R.animator.slide_out_left, R.animator.slide_in_left, R.animator.slide_out_right})
+@Transition({ R.animator.slide_in_right, R.animator.slide_out_left, R.animator.slide_in_left, R.animator.slide_out_right })
 public class ViewStateScreen extends TransitionScreen {
 
+    public static final Creator<ViewStateScreen> CREATOR = new ScreenCreator<ViewStateScreen>() {
+
+        @Override
+        public ViewStateScreen[] newArray(int size) {
+            return new ViewStateScreen[size];
+        }
+
+        @Override
+        protected ViewStateScreen doCreateFromParcel(Parcel source) {
+            int position = source.readInt();
+            return new ViewStateScreen(position);
+        }
+    };
     private final int position;
 
     public ViewStateScreen(int position) {
@@ -52,24 +65,12 @@ public class ViewStateScreen extends TransitionScreen {
         parcel.writeInt(position);
     }
 
-    public static final Creator<ViewStateScreen> CREATOR = new ScreenCreator<ViewStateScreen>() {
-
-        @Override protected ViewStateScreen doCreateFromParcel(Parcel source) {
-            int position = source.readInt();
-            return new ViewStateScreen(position);
-        }
-
-        @Override public ViewStateScreen[] newArray(int size) {
-            return new ViewStateScreen[size];
-        }
-    };
-
     @dagger.Module(
-        injects = {
-            ViewStateView.class
-        },
-        addsTo = CorePresenter.Module.class,
-        library = true
+            injects = {
+                    ViewStateView.class
+            },
+            addsTo = CorePresenter.Module.class,
+            library = true
     )
 
     public static class Module {
@@ -81,7 +82,8 @@ public class ViewStateScreen extends TransitionScreen {
             this.viewState = viewState;
         }
 
-        @Provides SparseArray<Parcelable> providesViewState() {
+        @Provides
+        SparseArray<Parcelable> providesViewState() {
             return viewState;
         }
     }
@@ -93,29 +95,30 @@ public class ViewStateScreen extends TransitionScreen {
         private final ActionBarPresenter actionBar;
         private final DrawerPresenter    drawer;
 
+        @Override
+        public void onLoad(Bundle savedInstanceState) {
+            actionBar.setConfig(new ActionBarPresenter.Config(
+                    true,
+                    true,
+                    "View State Parcer  Example",
+                    new ActionBarPresenter.MenuAction("Go away", new Action0() {
+                        @Override
+                        public void call() {
+                            flow.goTo(new ViewStateScreen(new Random().nextInt(MAX_VALUE)));
+                        }
+                    })
+            ));
+
+            drawer.setConfig(new DrawerPresenter.Config(true, DrawerLayout.LOCK_MODE_UNLOCKED));
+            restoreViewState();
+        }
+
         @Inject
         Presenter(SparseArray<Parcelable> viewState, Flow flow, ActionBarPresenter actionBar, DrawerPresenter drawer) {
             super(viewState);
             this.flow = flow;
             this.actionBar = actionBar;
             this.drawer = drawer;
-        }
-
-        @Override
-        public void onLoad(Bundle savedInstanceState) {
-            actionBar.setConfig(new ActionBarPresenter.Config(
-                true,
-                true,
-                "View State Parcer  Example",
-                new ActionBarPresenter.MenuAction("Go away", new Action0() {
-                    @Override public void call() {
-                        flow.goTo(new ViewStateScreen(new Random().nextInt(MAX_VALUE)));
-                    }
-                })
-            ));
-
-            drawer.setConfig(new DrawerPresenter.Config(true, DrawerLayout.LOCK_MODE_UNLOCKED));
-            restoreViewState();
         }
     }
 }

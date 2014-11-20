@@ -22,21 +22,8 @@ public class FractionalFrameLayout extends FrameLayout {
         super(context, attrs);
     }
 
-
-    @Override
-    public void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        screenHeight = h;
-        screenWidth = w;
-    }
-
-    public void setYFraction(float fraction) {
-        yFraction = fraction;
-        setY(screenHeight > 0 ? (yFraction * screenHeight) : 0);
-    }
-
-    public float getYFraction() {
-        return yFraction;
+    public float getXFraction() {
+        return xFraction;
     }
 
     public void setXFraction(float fraction) {
@@ -44,7 +31,19 @@ public class FractionalFrameLayout extends FrameLayout {
         setX(screenWidth > 0 ? (xFraction * screenWidth) : 0);
     }
 
-    public float getXFraction() {
-        return xFraction;
+    public float getYFraction() {
+        return yFraction;
+    }
+
+    public void setYFraction(float fraction) {
+        yFraction = fraction;
+        setY(screenHeight > 0 ? (yFraction * screenHeight) : 0);
+    }
+
+    @Override
+    public void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        screenHeight = h;
+        screenWidth = w;
     }
 }

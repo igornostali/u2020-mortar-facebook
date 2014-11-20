@@ -27,12 +27,12 @@ public class FlowTest extends BaseTest {
 
     /**
      * General test pattern:
-     *
+     * <p/>
      * 1. Perform action - navigation, button click etc
      * 2. Take screenshot of the view you've got to
      * 3. Verify view you've got is correct by matching views
-     *    making checks on them
-     *
+     * making checks on them
+     * <p/>
      * This way when something goes wrong you can visually check
      * what went wrong with your assertions by looking at
      * screenshots in test results
@@ -56,6 +56,5 @@ public class FlowTest extends BaseTest {
         screenshot(tag);
         onView(withId(R.id.nested_child)).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
     }
-
 
 }

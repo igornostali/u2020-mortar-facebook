@@ -27,10 +27,14 @@ public class NestedChildView extends FrameLayout {
         presenter.takeView(this);
     }
 
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-        ButterKnife.inject(this);
+    public void toggleAnimation() {
+        if (animator != null) {
+            if (animator.isRunning()) {
+                animator.end();
+            } else {
+                animator.start();
+            }
+        }
     }
 
     @Override
@@ -47,22 +51,18 @@ public class NestedChildView extends FrameLayout {
         presenter.dropView(this);
     }
 
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        ButterKnife.inject(this);
+    }
+
     private void createAnimation() {
         animator = ObjectAnimator.ofFloat(this, "rotation", 360);
         animator.setDuration(3600);
         animator.setInterpolator(new BounceInterpolator());
         animator.setRepeatMode(ValueAnimator.RESTART);
         animator.setRepeatCount(ValueAnimator.INFINITE);
-    }
-
-    public void toggleAnimation() {
-        if (animator != null) {
-            if (animator.isRunning()) {
-                animator.end();
-            } else {
-                animator.start();
-            }
-        }
     }
 }
 

@@ -31,11 +31,21 @@ public class StubYView extends FractionalFrameLayout {
         examplePopup = new ExamplePopup(context);
     }
 
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-        ButterKnife.inject(this);
-        presenter.takeView(this);
+    @OnClick(R.id.stub_text)
+    public void clickStub() {
+        presenter.goToAnotherStub();
+    }
+
+    public Popup<ExamplePopupData, Boolean> getExamplePopup() {
+        return examplePopup;
+    }
+
+    public void setStubText(int stringId) {
+        textView.setText(stringId);
+    }
+
+    public void showToast(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -44,22 +54,11 @@ public class StubYView extends FractionalFrameLayout {
         presenter.dropView(this);
     }
 
-    @OnClick(R.id.stub_text)
-    public void clickStub() {
-        presenter.goToAnotherStub();
-    }
-
-    public void setStubText(int stringId) {
-        textView.setText(stringId);
-    }
-
-
-    public void showToast(String message) {
-        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-    }
-
-    public Popup<ExamplePopupData, Boolean> getExamplePopup() {
-        return examplePopup;
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        ButterKnife.inject(this);
+        presenter.takeView(this);
     }
 }
 

@@ -5,7 +5,7 @@ import javax.inject.Singleton;
 import dagger.Module;
 import dagger.Provides;
 
-@Module(injects = {}, library = true)
+@Module(injects = { }, library = true)
 public class AndroidModule {
 
     @Provides
@@ -20,8 +20,8 @@ public class AndroidModule {
         return new DrawerPresenter();
     }
 
-    @Provides 
-    @Singleton 
+    @Provides
+    @Singleton
     ActivityResultRegistrar provideIntentLauncher(ActivityResultPresenter presenter) {
         return presenter;
     }

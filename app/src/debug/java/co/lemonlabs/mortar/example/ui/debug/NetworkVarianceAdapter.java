@@ -15,10 +15,6 @@ class NetworkVarianceAdapter extends BindableAdapter<Integer> {
             20, 40, 60
     };
 
-    NetworkVarianceAdapter(Context context) {
-        super(context);
-    }
-
     public static int getPositionForValue(int value) {
         for (int i = 0; i < VALUES.length; i++) {
             if (VALUES[i] == value) {
@@ -34,13 +30,13 @@ class NetworkVarianceAdapter extends BindableAdapter<Integer> {
     }
 
     @Override
-    public Integer getItem(int position) {
-        return VALUES[position];
+    public long getItemId(int position) {
+        return position;
     }
 
     @Override
-    public long getItemId(int position) {
-        return position;
+    public Integer getItem(int position) {
+        return VALUES[position];
     }
 
     @Override
@@ -57,5 +53,9 @@ class NetworkVarianceAdapter extends BindableAdapter<Integer> {
     @Override
     public View newDropDownView(LayoutInflater inflater, int position, ViewGroup container) {
         return inflater.inflate(android.R.layout.simple_spinner_dropdown_item, container, false);
+    }
+
+    NetworkVarianceAdapter(Context context) {
+        super(context);
     }
 }

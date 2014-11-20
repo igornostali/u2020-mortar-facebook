@@ -11,11 +11,6 @@ import javax.inject.Singleton;
 public final class MockImageLoader {
     private final AssetManager assetManager;
 
-    @Inject
-    MockImageLoader(Application application) {
-        assetManager = application.getAssets();
-    }
-
     /**
      * A filename like {@code abc123.jpg} inside the {@code mock/images/} asset folder.
      */
@@ -59,18 +54,12 @@ public final class MockImageLoader {
             this.height = height;
         }
 
-        public ImageBuilder title(String title) {
-            this.title = title;
-            return this;
+        public Image build() {
+            return new Image(id, link, title, width, height, datetime, views, isAlbum);
         }
 
         public ImageBuilder datetime(int datetime) {
             this.datetime = datetime;
-            return this;
-        }
-
-        public ImageBuilder views(int views) {
-            this.views = views;
             return this;
         }
 
@@ -79,8 +68,19 @@ public final class MockImageLoader {
             return this;
         }
 
-        public Image build() {
-            return new Image(id, link, title, width, height, datetime, views, isAlbum);
+        public ImageBuilder title(String title) {
+            this.title = title;
+            return this;
         }
+
+        public ImageBuilder views(int views) {
+            this.views = views;
+            return this;
+        }
+    }
+
+    @Inject
+    MockImageLoader(Application application) {
+        assetManager = application.getAssets();
     }
 }

@@ -40,8 +40,20 @@ import timber.log.Timber;
 import static android.provider.ContactsContract.CommonDataKinds.Phone;
 
 @Layout(R.layout.gallery_view)
-@Transition({Transitions.NONE, Transitions.NONE, Transitions.NONE, Transitions.NONE})
+@Transition({ Transitions.NONE, Transitions.NONE, Transitions.NONE, Transitions.NONE })
 public class GalleryScreen extends TransitionScreen {
+
+    public static final Creator<GalleryScreen> CREATOR = new ScreenCreator<GalleryScreen>() {
+        @Override
+        public GalleryScreen[] newArray(int size) {
+            return new GalleryScreen[size];
+        }
+
+        @Override
+        protected GalleryScreen doCreateFromParcel(Parcel source) {
+            return new GalleryScreen();
+        }
+    };
 
     @Override
     public String getMortarScopeName() {
@@ -53,20 +65,10 @@ public class GalleryScreen extends TransitionScreen {
         return new Module(getViewState());
     }
 
-    public static final Creator<GalleryScreen> CREATOR = new ScreenCreator<GalleryScreen>() {
-        @Override protected GalleryScreen doCreateFromParcel(Parcel source) {
-            return new GalleryScreen();
-        }
-
-        @Override public GalleryScreen[] newArray(int size) {
-            return new GalleryScreen[size];
-        }
-    };
-
     @dagger.Module(
-        injects = GalleryView.class,
-        addsTo = CorePresenter.Module.class,
-        library = true
+            injects = GalleryView.class,
+            addsTo = CorePresenter.Module.class,
+            library = true
     )
 
     public static class Module {
@@ -77,19 +79,22 @@ public class GalleryScreen extends TransitionScreen {
             this.viewState = viewState;
         }
 
-        @Provides Section providesSection() {
-            return Section.HOT;
+        @Provides
+        SparseArray<Parcelable> provideViewState() {
+            return viewState;
         }
 
-        @Provides SparseArray<Parcelable> provideViewState() {
-            return viewState;
+        @Provides
+        Section providesSection() {
+            return Section.HOT;
         }
 
     }
 
     @Singleton
-    public static class Presenter extends ViewPresenter<GalleryView>
-        implements ActivityResultPresenter.ActivityResultListener {
+    public static class Presenter
+            extends ViewPresenter<GalleryView>
+            implements ActivityResultPresenter.ActivityResultListener {
 
         private static final int PICK_CONTACT_REQUEST = 1;
 
@@ -103,30 +108,26 @@ public class GalleryScreen extends TransitionScreen {
 
         private Subscription request;
 
-        @Inject Presenter(
-            ActionBarPresenter actionBar,
-            DrawerPresenter drawer,
-            GalleryDatabase galleryDatabase,
-            Picasso picasso,
-            Section section,
-            ActivityResultRegistrar activityResultRegistrar,
-            SparseArray<Parcelable> viewState
-        ) {
-            this.actionBar = actionBar;
-            this.drawer = drawer;
-            this.galleryDatabase = galleryDatabase;
-            this.picasso = picasso;
-            this.section = section;
-            this.activityResultRegistrar = activityResultRegistrar;
-            this.viewState = viewState;
+        @Override
+        public void dropView(GalleryView view) {
+            request.unsubscribe();
+            super.dropView(view);
         }
 
-        @Override public void onLoad(Bundle savedInstanceState) {
+        @Override
+        public void onEnterScope(MortarScope scope) {
+            super.onEnterScope(scope);
+            activityResultRegistrar.register(scope, this);
+        }
+
+        @Override
+        public void onLoad(Bundle savedInstanceState) {
             super.onLoad(savedInstanceState);
             if (getView() == null) return;
 
             request = galleryDatabase.loadGallery(section, new EndlessObserver<List<Image>>() {
-                @Override public void onNext(List<Image> images) {
+                @Override
+                public void onNext(List<Image> images) {
                     if (getView() != null) {
                         getView().getAdapter().replaceWith(images);
                         getView().updateChildId();
@@ -138,29 +139,25 @@ public class GalleryScreen extends TransitionScreen {
             });
 
             actionBar.setConfig(new ActionBarPresenter.Config(
-                true, true, "U2020",
-                new ActionBarPresenter.MenuAction("Pick contact", new Action0() {
-                    @Override public void call() {
-                        Intent pickContactIntent = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
-                        pickContactIntent.setType(Phone.CONTENT_TYPE);
-                        activityResultRegistrar.startActivityForResult(PICK_CONTACT_REQUEST, pickContactIntent);
-                    }
-                })
+                    true, true, "U2020",
+                    new ActionBarPresenter.MenuAction("Pick contact", new Action0() {
+                        @Override
+                        public void call() {
+                            Intent pickContactIntent = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
+                            pickContactIntent.setType(Phone.CONTENT_TYPE);
+                            activityResultRegistrar.startActivityForResult(PICK_CONTACT_REQUEST, pickContactIntent);
+                        }
+                    })
             ));
             drawer.setConfig(new DrawerPresenter.Config(true, DrawerLayout.LOCK_MODE_UNLOCKED));
         }
 
-        @Override public void onEnterScope(MortarScope scope) {
-            super.onEnterScope(scope);
-            activityResultRegistrar.register(scope, this);
+        public Picasso getPicasso() {
+            return picasso;
         }
 
-        @Override public void dropView(GalleryView view) {
-            request.unsubscribe();
-            super.dropView(view);
-        }
-
-        @Override public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        @Override
+        public void onActivityResult(int requestCode, int resultCode, Intent data) {
             Timber.i("request code: %s, result code: %s", requestCode, resultCode);
             if (data != null) {
                 Timber.i("Got data: %s", data.getData());
@@ -168,8 +165,23 @@ public class GalleryScreen extends TransitionScreen {
             }
         }
 
-        public Picasso getPicasso() {
-            return picasso;
+        @Inject
+        Presenter(
+                ActionBarPresenter actionBar,
+                DrawerPresenter drawer,
+                GalleryDatabase galleryDatabase,
+                Picasso picasso,
+                Section section,
+                ActivityResultRegistrar activityResultRegistrar,
+                SparseArray<Parcelable> viewState
+        ) {
+            this.actionBar = actionBar;
+            this.drawer = drawer;
+            this.galleryDatabase = galleryDatabase;
+            this.picasso = picasso;
+            this.section = section;
+            this.activityResultRegistrar = activityResultRegistrar;
+            this.viewState = viewState;
         }
     }
 }

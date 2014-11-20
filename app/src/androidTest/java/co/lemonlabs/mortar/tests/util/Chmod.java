@@ -8,6 +8,7 @@ import java.io.IOException;
 
 abstract class Chmod {
     private static final Chmod INSTANCE;
+
     static {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
             INSTANCE = new Java6Chmod();
@@ -15,6 +16,10 @@ abstract class Chmod {
             INSTANCE = new Java5Chmod();
         }
     }
+
+    protected abstract void plusR(File file);
+
+    protected abstract void plusRWX(File file);
 
     static void chmodPlusR(File file) {
         INSTANCE.plusR(file);
@@ -24,21 +29,20 @@ abstract class Chmod {
         INSTANCE.plusRWX(file);
     }
 
-    protected abstract void plusR(File file);
-    protected abstract void plusRWX(File file);
-
     private static class Java5Chmod extends Chmod {
-        @Override protected void plusR(File file) {
+        @Override
+        protected void plusR(File file) {
             try {
-                Runtime.getRuntime().exec(new String[] {"chmod", "644", file.getAbsolutePath()});
+                Runtime.getRuntime().exec(new String[] { "chmod", "644", file.getAbsolutePath() });
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        @Override protected void plusRWX(File file) {
+        @Override
+        protected void plusRWX(File file) {
             try {
-                Runtime.getRuntime().exec(new String[] {"chmod", "777", file.getAbsolutePath()});
+                Runtime.getRuntime().exec(new String[] { "chmod", "777", file.getAbsolutePath() });
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -46,7 +50,8 @@ abstract class Chmod {
     }
 
     private static class Java6Chmod extends Chmod {
-        @Override protected void plusR(File file) {
+        @Override
+        protected void plusR(File file) {
             if (Build.VERSION.SDK_INT >= 9) {
                 file.setReadable(true, false);
             } else {
@@ -54,7 +59,8 @@ abstract class Chmod {
             }
         }
 
-        @Override protected void plusRWX(File file) {
+        @Override
+        protected void plusRWX(File file) {
             if (Build.VERSION.SDK_INT >= 9) {
                 file.setReadable(true, false);
                 file.setWritable(true, false);

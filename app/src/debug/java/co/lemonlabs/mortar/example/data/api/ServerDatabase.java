@@ -34,6 +34,11 @@ public final class ServerDatabase {
         return Long.toHexString(nextId());
     }
 
+    public List<Image> getImagesForSection(Section section) {
+        initializeMockData();
+        return imagesBySection.get(section);
+    }
+
     private synchronized void initializeMockData() {
         if (initialized) return;
         initialized = true;
@@ -78,10 +83,5 @@ public final class ServerDatabase {
                 .title("Wow Retrofit") //
                 .views(3000) //
                 .build());
-    }
-
-    public List<Image> getImagesForSection(Section section) {
-        initializeMockData();
-        return imagesBySection.get(section);
     }
 }

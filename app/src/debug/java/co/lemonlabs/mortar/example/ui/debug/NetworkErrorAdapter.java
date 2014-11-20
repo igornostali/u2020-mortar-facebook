@@ -15,10 +15,6 @@ class NetworkErrorAdapter extends BindableAdapter<Integer> {
             0, 3, 10, 25, 100
     };
 
-    NetworkErrorAdapter(Context context) {
-        super(context);
-    }
-
     public static int getPositionForValue(int value) {
         for (int i = 0; i < VALUES.length; i++) {
             if (VALUES[i] == value) {
@@ -34,13 +30,13 @@ class NetworkErrorAdapter extends BindableAdapter<Integer> {
     }
 
     @Override
-    public Integer getItem(int position) {
-        return VALUES[position];
+    public long getItemId(int position) {
+        return position;
     }
 
     @Override
-    public long getItemId(int position) {
-        return position;
+    public Integer getItem(int position) {
+        return VALUES[position];
     }
 
     @Override
@@ -61,5 +57,9 @@ class NetworkErrorAdapter extends BindableAdapter<Integer> {
     @Override
     public View newDropDownView(LayoutInflater inflater, int position, ViewGroup container) {
         return inflater.inflate(android.R.layout.simple_spinner_dropdown_item, container, false);
+    }
+
+    NetworkErrorAdapter(Context context) {
+        super(context);
     }
 }

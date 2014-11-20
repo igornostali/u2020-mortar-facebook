@@ -35,13 +35,17 @@ import static android.content.Intent.ACTION_MAIN;
 import static android.content.Intent.CATEGORY_LAUNCHER;
 import static android.view.MenuItem.SHOW_AS_ACTION_ALWAYS;
 
-public class MainActivity extends Activity implements ActionBarPresenter.View, DrawerPresenter.View,
-    ActivityResultPresenter.View {
+public class MainActivity extends Activity implements
+        ActionBarPresenter.View, DrawerPresenter.View, ActivityResultPresenter.View {
 
-    @Inject ActionBarPresenter      actionBarPresenter;
-    @Inject DrawerPresenter         drawerPresenter;
-    @Inject ActivityResultPresenter activityResultPresenter;
-    @Inject AppContainer            appContainer;
+    @Inject
+    ActionBarPresenter      actionBarPresenter;
+    @Inject
+    DrawerPresenter         drawerPresenter;
+    @Inject
+    ActivityResultPresenter activityResultPresenter;
+    @Inject
+    AppContainer            appContainer;
 
     private ActionBarPresenter.MenuAction actionBarMenuAction;
     private MenuItem                      menuItem;
@@ -50,10 +54,60 @@ public class MainActivity extends Activity implements ActionBarPresenter.View, D
     private Flow                          flow;
     private ActionBarDrawerToggle         drawerToggle;
 
-    private boolean configurationChangeIncoming;
     private String  scopeName;
+    private boolean configurationChangeIncoming;
 
-    @Override protected void onCreate(Bundle savedInstanceState) {
+    @Override
+    public MortarScope getMortarScope() {
+        return activityScope;
+    }
+
+    @Override
+    public void setShowHomeEnabled(boolean enabled) {
+        ActionBar actionBar = getActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayShowHomeEnabled(enabled);
+        }
+    }
+
+    @Override
+    public void setUpButtonEnabled(boolean enabled) {
+        ActionBar actionBar = getActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(enabled);
+            actionBar.setHomeButtonEnabled(enabled);
+        }
+    }
+
+    @Override
+    public void setMenu(ActionBarPresenter.MenuAction action) {
+        if (action != actionBarMenuAction) {
+            actionBarMenuAction = action;
+            invalidateOptionsMenu();
+        }
+    }
+
+    @Override
+    public void setDrawerIndicatorEnabled(boolean enabled) {
+        drawerToggle.setDrawerIndicatorEnabled(enabled);
+    }
+
+    @Override
+    public void setDrawerLockMode(int lockMode) {
+        coreView.setDrawerLockMode(lockMode);
+    }
+
+    @Override
+    public void startActivityForResult(int requestCode, Intent intent) {
+        if (canHandleIntent(intent)) {
+            startActivityForResult(intent, requestCode);
+        } else {
+            Timber.e("Could not handle intent %s... ignoring", intent);
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         if (isWrongInstance()) {
@@ -82,19 +136,19 @@ public class MainActivity extends Activity implements ActionBarPresenter.View, D
     }
 
     @Override
-    public Object getSystemService(String name) {
-        if (Mortar.isScopeSystemService(name)) {
-            return activityScope;
-        }
-        return super.getSystemService(name);
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        drawerToggle.syncState();
     }
 
-    @Override public Object onRetainNonConfigurationInstance() {
-        configurationChangeIncoming = true;
-        return activityScope.getName();
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        activityScope.onSaveInstanceState(outState);
     }
 
-    @Override protected void onDestroy() {
+    @Override
+    protected void onDestroy() {
         super.onDestroy();
         actionBarPresenter.dropView(this);
         drawerPresenter.dropView(this);
@@ -108,26 +162,38 @@ public class MainActivity extends Activity implements ActionBarPresenter.View, D
         }
     }
 
-    private String getScopeName() {
-        if (scopeName == null) scopeName = (String) getLastNonConfigurationInstance();
-        if (scopeName == null) {
-            scopeName = getClass().getName() + "-" + UUID.randomUUID().toString();
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        drawerToggle.onConfigurationChanged(newConfig);
+    }
+
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        configurationChangeIncoming = true;
+        return activityScope.getName();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (flow.goBack()) {
+            return;
         }
-        return scopeName;
+        super.onBackPressed();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         if (actionBarMenuAction != null) {
             menuItem = menu.add(actionBarMenuAction.title)
-                .setShowAsActionFlags(SHOW_AS_ACTION_ALWAYS)
-                .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem menuItem) {
-                        actionBarMenuAction.action.call();
-                        return true;
-                    }
-                });
+                           .setShowAsActionFlags(SHOW_AS_ACTION_ALWAYS)
+                           .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                               @Override
+                               public boolean onMenuItemClick(MenuItem menuItem) {
+                                   actionBarMenuAction.action.call();
+                                   return true;
+                               }
+                           });
         } else if (menu.hasVisibleItems() && menuItem != null) {
             menu.removeItem(menuItem.getItemId());
         }
@@ -145,31 +211,8 @@ public class MainActivity extends Activity implements ActionBarPresenter.View, D
         return super.onOptionsItemSelected(item);
     }
 
-    @Override protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        activityScope.onSaveInstanceState(outState);
-    }
-
     @Override
-    public void onBackPressed() {
-        if (flow.goBack()) {
-            return;
-        }
-        super.onBackPressed();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        drawerToggle.onConfigurationChanged(newConfig);
-    }
-
-    @Override
-    public MortarScope getMortarScope() {
-        return activityScope;
-    }
-
-    @Override public void startActivity(Intent intent) {
+    public void startActivity(Intent intent) {
         if (canHandleIntent(intent)) {
             startActivity(intent);
         } else {
@@ -177,54 +220,31 @@ public class MainActivity extends Activity implements ActionBarPresenter.View, D
         }
     }
 
-    @Override public void startActivityForResult(int requestCode, Intent intent) {
-        if (canHandleIntent(intent)) {
-            startActivityForResult(intent, requestCode);
-        } else {
-            Timber.e("Could not handle intent %s... ignoring", intent);
-        }
-    }
-
-    @Override
-    public void setDrawerIndicatorEnabled(boolean enabled) {
-        drawerToggle.setDrawerIndicatorEnabled(enabled);
-    }
-
-    @Override
-    public void setDrawerLockMode(int lockMode) {
-        coreView.setDrawerLockMode(lockMode);
-    }
-
-    @Override
-    public void setShowHomeEnabled(boolean enabled) {
-        ActionBar actionBar = getActionBar();
-        actionBar.setDisplayShowHomeEnabled(enabled);
-    }
-
-    @Override
-    public void setUpButtonEnabled(boolean enabled) {
-        ActionBar actionBar = getActionBar();
-        actionBar.setDisplayHomeAsUpEnabled(enabled);
-        actionBar.setHomeButtonEnabled(enabled);
-    }
-
-    @Override
-    public void setMenu(ActionBarPresenter.MenuAction action) {
-        if (action != actionBarMenuAction) {
-            actionBarMenuAction = action;
-            invalidateOptionsMenu();
-        }
-    }
-
-    @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        drawerToggle.syncState();
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         activityResultPresenter.onActivityResultReceived(requestCode, resultCode, data);
+    }
+
+    @Override
+    public Object getSystemService(String name) {
+        if (Mortar.isScopeSystemService(name)) {
+            return activityScope;
+        }
+        return super.getSystemService(name);
+    }
+
+    private boolean canHandleIntent(Intent intent) {
+        PackageManager manager = getPackageManager();
+        List<ResolveInfo> info = manager.queryIntentActivities(intent, 0);
+        return info.size() > 0;
+    }
+
+    private String getScopeName() {
+        if (scopeName == null) scopeName = (String) getLastNonConfigurationInstance();
+        if (scopeName == null) {
+            scopeName = getClass().getName() + "-" + UUID.randomUUID().toString();
+        }
+        return scopeName;
     }
 
     private boolean isWrongInstance() {
@@ -234,11 +254,5 @@ public class MainActivity extends Activity implements ActionBarPresenter.View, D
             return intent.hasCategory(CATEGORY_LAUNCHER) && isMainAction;
         }
         return false;
-    }
-
-    private boolean canHandleIntent(Intent intent) {
-        PackageManager manager = getPackageManager();
-        List<ResolveInfo> info = manager.queryIntentActivities(intent, 0);
-        return info.size() > 0;
     }
 }

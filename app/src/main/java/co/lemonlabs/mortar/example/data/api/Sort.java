@@ -7,12 +7,12 @@ public enum Sort {
 
     private final String value;
 
-    Sort(String value) {
-        this.value = value;
-    }
-
     @Override
     public String toString() {
         return value;
+    }
+
+    Sort(String value) {
+        this.value = value;
     }
 }

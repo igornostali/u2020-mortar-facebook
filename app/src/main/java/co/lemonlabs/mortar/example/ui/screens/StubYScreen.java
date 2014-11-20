@@ -28,9 +28,22 @@ import mortar.ViewPresenter;
 import rx.functions.Action0;
 
 @Layout(R.layout.stuby)
-@Transition({R.animator.slide_in_bot, Transitions.NONE, Transitions.NONE, R.animator.slide_out_bot})
+@Transition({ R.animator.slide_in_bot, Transitions.NONE, Transitions.NONE, R.animator.slide_out_bot })
 public class StubYScreen extends TransitionScreen {
 
+    public static final Creator<StubYScreen> CREATOR = new ScreenCreator<StubYScreen>() {
+        @Override
+        public StubYScreen[] newArray(int size) {
+            return new StubYScreen[size];
+        }
+
+        @Override
+        protected StubYScreen doCreateFromParcel(Parcel source) {
+            boolean hasDrawer = source.readByte() != 0;
+            int position = source.readInt();
+            return new StubYScreen(hasDrawer, position);
+        }
+    };
     private final boolean hasDrawer;
     private final int     position;
 
@@ -55,24 +68,12 @@ public class StubYScreen extends TransitionScreen {
         parcel.writeInt(position);
     }
 
-    public static final Creator<StubYScreen> CREATOR = new ScreenCreator<StubYScreen>() {
-        @Override protected StubYScreen doCreateFromParcel(Parcel source) {
-            boolean hasDrawer = source.readByte() != 0;
-            int position = source.readInt();
-            return new StubYScreen(hasDrawer, position);
-        }
-
-        @Override public StubYScreen[] newArray(int size) {
-            return new StubYScreen[size];
-        }
-    };
-
     @dagger.Module(
-        injects = {
-            StubYView.class
-        },
-        addsTo = CorePresenter.Module.class,
-        library = true
+            injects = {
+                    StubYView.class
+            },
+            addsTo = CorePresenter.Module.class,
+            library = true
     )
 
     public static class Module {
@@ -83,7 +84,9 @@ public class StubYScreen extends TransitionScreen {
             this.hasDrawer = hasDrawer;
         }
 
-        @Provides @Named("stub") boolean providesHasDrawer() {
+        @Provides
+        @Named("stub")
+        boolean providesHasDrawer() {
             return hasDrawer;
         }
     }
@@ -99,17 +102,10 @@ public class StubYScreen extends TransitionScreen {
 
         private AtomicBoolean transitioning = new AtomicBoolean();
 
-        @Inject
-        Presenter(Flow flow, ActionBarPresenter actionBar, DrawerPresenter drawer, @Named("stub") boolean hasDrawer) {
-            this.flow = flow;
-            this.actionBar = actionBar;
-            this.drawer = drawer;
-            this.hasDrawer = hasDrawer;
-            this.examplePopupPresenter = new PopupPresenter<ExamplePopupData, Boolean>() {
-                @Override protected void onPopupResult(Boolean confirmed) {
-                    Presenter.this.getView().showToast(confirmed ? "Just did that!" : "If you say so...");
-                }
-            };
+        @Override
+        public void dropView(StubYView view) {
+            examplePopupPresenter.dropView(getView().getExamplePopup());
+            super.dropView(view);
         }
 
         @Override
@@ -118,14 +114,15 @@ public class StubYScreen extends TransitionScreen {
             if (getView() == null) return;
 
             actionBar.setConfig(new ActionBarPresenter.Config(
-                true,
-                true,
-                hasDrawer ? "Stub with drawer" : "Stub",
-                new ActionBarPresenter.MenuAction("Alert", new Action0() {
-                    @Override public void call() {
-                        examplePopupPresenter.show(new ExamplePopupData("This is an example of a Popup Presenter"));
-                    }
-                })
+                    true,
+                    true,
+                    hasDrawer ? "Stub with drawer" : "Stub",
+                    new ActionBarPresenter.MenuAction("Alert", new Action0() {
+                        @Override
+                        public void call() {
+                            examplePopupPresenter.show(new ExamplePopupData("This is an example of a Popup Presenter"));
+                        }
+                    })
             ));
 
             if (!hasDrawer) {
@@ -139,16 +136,24 @@ public class StubYScreen extends TransitionScreen {
             examplePopupPresenter.takeView(getView().getExamplePopup());
         }
 
-        @Override
-        public void dropView(StubYView view) {
-            examplePopupPresenter.dropView(getView().getExamplePopup());
-            super.dropView(view);
-        }
-
         public void goToAnotherStub() {
             if (!transitioning.getAndSet(true)) {
                 flow.goTo(new StubXScreen(false, new Random().nextInt(420)));
             }
+        }
+
+        @Inject
+        Presenter(Flow flow, ActionBarPresenter actionBar, DrawerPresenter drawer, @Named("stub") boolean hasDrawer) {
+            this.flow = flow;
+            this.actionBar = actionBar;
+            this.drawer = drawer;
+            this.hasDrawer = hasDrawer;
+            this.examplePopupPresenter = new PopupPresenter<ExamplePopupData, Boolean>() {
+                @Override
+                protected void onPopupResult(Boolean confirmed) {
+                    Presenter.this.getView().showToast(confirmed ? "Just did that!" : "If you say so...");
+                }
+            };
         }
     }
 }

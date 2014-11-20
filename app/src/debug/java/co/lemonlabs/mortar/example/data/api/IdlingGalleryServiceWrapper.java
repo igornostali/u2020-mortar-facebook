@@ -36,12 +36,6 @@ public class IdlingGalleryServiceWrapper implements GalleryService, IdlingResour
     }
 
     @Override
-    public Observable<Gallery> listGallery(@Path("section") Section section, @Path("sort") Sort sort, @Path("page") int page) {
-        counter.incrementAndGet();
-        return api.listGallery(section, sort, page).doOnNext(new IdlingAction<Gallery>());
-    }
-
-    @Override
     public String getName() {
         return this.getClass().getName() + hashCode();
     }
@@ -54,6 +48,12 @@ public class IdlingGalleryServiceWrapper implements GalleryService, IdlingResour
     @Override
     public void registerIdleTransitionCallback(ResourceCallback resourceCallback) {
         callbacks.add(resourceCallback);
+    }
+
+    @Override
+    public Observable<Gallery> listGallery(@Path("section") Section section, @Path("sort") Sort sort, @Path("page") int page) {
+        counter.incrementAndGet();
+        return api.listGallery(section, sort, page).doOnNext(new IdlingAction<Gallery>());
     }
 
     private void notifyIdle() {

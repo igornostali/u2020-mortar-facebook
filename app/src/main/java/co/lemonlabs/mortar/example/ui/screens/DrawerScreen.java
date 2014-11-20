@@ -26,11 +26,11 @@ public class DrawerScreen implements Blueprint {
     }
 
     @dagger.Module(
-        injects = {
-            DrawerView.class
-        },
-        addsTo = CorePresenter.Module.class,
-        library = true
+            injects = {
+                    DrawerView.class
+            },
+            addsTo = CorePresenter.Module.class,
+            library = true
     )
     public static class Module {
     }
@@ -39,17 +39,6 @@ public class DrawerScreen implements Blueprint {
     public static class Presenter extends ViewPresenter<DrawerView> {
 
         private final Flow flow;
-
-        @Inject Presenter(Flow flow) {
-            this.flow = flow;
-        }
-
-        @Override
-        public void onLoad(Bundle savedInstanceState) {
-            super.onLoad(savedInstanceState);
-            if (getView() == null) return;
-            getView().setListAdapter();
-        }
 
         public void goToScreenAtPosition(int position) {
             switch (position) {
@@ -66,6 +55,18 @@ public class DrawerScreen implements Blueprint {
                     flow.replaceTo(new ViewStateScreen(1));
                     break;
             }
+        }
+
+        @Override
+        public void onLoad(Bundle savedInstanceState) {
+            super.onLoad(savedInstanceState);
+            if (getView() == null) return;
+            getView().setListAdapter();
+        }
+
+        @Inject
+        Presenter(Flow flow) {
+            this.flow = flow;
         }
     }
 }

@@ -27,6 +27,21 @@ public class DrawerView extends ListView {
         Mortar.inject(context, this);
     }
 
+    public void setListAdapter() {
+        setAdapter(new ArrayAdapter<>(
+                getContext(),
+                android.R.layout.simple_list_item_activated_1,
+                android.R.id.text1,
+                getContext().getResources().getStringArray(R.array.drawer_items)
+        ));
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        presenter.dropView(this);
+    }
+
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
@@ -49,20 +64,5 @@ public class DrawerView extends ListView {
             ((CoreView) getParent()).closeDrawer(this);
             presenter.goToScreenAtPosition(position);
         }
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        presenter.dropView(this);
-    }
-
-    public void setListAdapter() {
-        setAdapter(new ArrayAdapter<>(
-            getContext(),
-            android.R.layout.simple_list_item_activated_1,
-            android.R.id.text1,
-            getContext().getResources().getStringArray(R.array.drawer_items)
-        ));
     }
 }

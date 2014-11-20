@@ -20,6 +20,66 @@ import static org.hamcrest.CoreMatchers.anything;
 
 public class ViewActions {
 
+    public static ViewAction screenshot(final String description) {
+        final Thread testThread = Thread.currentThread();
+        return new ViewAction() {
+            @Override
+            public Matcher<View> getConstraints() {
+                return anyView();
+            }
+
+            @Override
+            public String getDescription() {
+                return "Takes a screenshot of matching view";
+            }
+
+            @Override
+            public void perform(UiController uiController, View view) {
+                uiController.loopMainThreadUntilIdle();
+                String tag = description.replaceAll("[^a-zA-Z0-9_-]", "_");
+
+                final File dir = ScreenshotTaker.obtainScreenshotDirectory(view.getContext(), testThread);
+                final String file = ScreenshotTaker.obtainScreenshotName(tag);
+
+                try {
+                    new ScreenshotTaker(dir, file).takeScreenShot(view);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+    }
+
+    /**
+     * Perform action of waiting for a specific time. Useful when you need
+     * to wait for animations to end and Espresso fails at waiting.
+     * <p/>
+     * E.g.:
+     * onView(isRoot()).perform(waitAtLeast(Sampling.SECONDS_15));
+     *
+     * @param millis
+     * @return
+     */
+    public static ViewAction waitAtLeast(final long millis) {
+        return new ViewAction() {
+            @Override
+            public Matcher<View> getConstraints() {
+                return anything();
+            }
+
+            @Override
+            public String getDescription() {
+                return "wait for at least " + millis + " millis.";
+            }
+
+            @Override
+            public void perform(final UiController uiController, final View view) {
+                uiController.loopMainThreadUntilIdle();
+                uiController.loopMainThreadForAtLeast(millis);
+            }
+        };
+    }
+
     /**
      * Perform action of waiting for a specific view id.
      * <p/>
@@ -63,40 +123,10 @@ public class ViewActions {
 
                 // timeout happens
                 throw new PerformException.Builder()
-                    .withActionDescription(this.getDescription())
-                    .withViewDescription(HumanReadables.describe(view))
-                    .withCause(new TimeoutException())
-                    .build();
-            }
-        };
-    }
-
-    /**
-     * Perform action of waiting for a specific time. Useful when you need
-     * to wait for animations to end and Espresso fails at waiting.
-     * <p/>
-     * E.g.:
-     * onView(isRoot()).perform(waitAtLeast(Sampling.SECONDS_15));
-     *
-     * @param millis
-     * @return
-     */
-    public static ViewAction waitAtLeast(final long millis) {
-        return new ViewAction() {
-            @Override
-            public Matcher<View> getConstraints() {
-                return anything();
-            }
-
-            @Override
-            public String getDescription() {
-                return "wait for at least " + millis + " millis.";
-            }
-
-            @Override
-            public void perform(final UiController uiController, final View view) {
-                uiController.loopMainThreadUntilIdle();
-                uiController.loopMainThreadForAtLeast(millis);
+                        .withActionDescription(this.getDescription())
+                        .withViewDescription(HumanReadables.describe(view))
+                        .withCause(new TimeoutException())
+                        .build();
             }
         };
     }
@@ -124,31 +154,6 @@ public class ViewActions {
             @Override
             public void perform(final UiController uiController, final View view) {
                 uiController.loopMainThreadUntilIdle();
-            }
-        };
-    }
-
-    public static ViewAction screenshot(final String description) {
-        final Thread testThread = Thread.currentThread();
-        return new ViewAction() {
-            @Override public Matcher<View> getConstraints() {
-                return anyView();
-            }
-            @Override public String getDescription() {
-                return "Takes a screenshot of matching view";
-            }
-            @Override public void perform(UiController uiController, View view) {
-                uiController.loopMainThreadUntilIdle();
-                String tag = description.replaceAll("[^a-zA-Z0-9_-]", "_");
-
-                final File dir = ScreenshotTaker.obtainScreenshotDirectory(view.getContext(), testThread);
-                final String file = ScreenshotTaker.obtainScreenshotName(tag);
-
-                try {
-                    new ScreenshotTaker(dir, file).takeScreenShot(view);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
             }
         };
     }

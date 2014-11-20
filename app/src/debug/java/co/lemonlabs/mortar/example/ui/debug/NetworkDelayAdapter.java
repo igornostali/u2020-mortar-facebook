@@ -15,10 +15,6 @@ class NetworkDelayAdapter extends BindableAdapter<Long> {
             250, 500, 1000, 2000, 3000
     };
 
-    NetworkDelayAdapter(Context context) {
-        super(context);
-    }
-
     public static int getPositionForValue(long value) {
         for (int i = 0; i < VALUES.length; i++) {
             if (VALUES[i] == value) {
@@ -34,13 +30,13 @@ class NetworkDelayAdapter extends BindableAdapter<Long> {
     }
 
     @Override
-    public Long getItem(int position) {
-        return VALUES[position];
+    public long getItemId(int position) {
+        return position;
     }
 
     @Override
-    public long getItemId(int position) {
-        return position;
+    public Long getItem(int position) {
+        return VALUES[position];
     }
 
     @Override
@@ -57,5 +53,9 @@ class NetworkDelayAdapter extends BindableAdapter<Long> {
     @Override
     public View newDropDownView(LayoutInflater inflater, int position, ViewGroup container) {
         return inflater.inflate(android.R.layout.simple_spinner_dropdown_item, container, false);
+    }
+
+    NetworkDelayAdapter(Context context) {
+        super(context);
     }
 }

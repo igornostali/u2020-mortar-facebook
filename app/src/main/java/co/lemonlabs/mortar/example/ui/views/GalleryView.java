@@ -26,21 +26,8 @@ public class GalleryView extends BetterViewAnimator {
         Mortar.inject(context, this);
     }
 
-    @Override protected void onFinishInflate() {
-        super.onFinishInflate();
-        ButterKnife.inject(this);
-        adapter = new GalleryAdapter(getContext(), presenter.getPicasso());
-        setAdapter(adapter);
-        presenter.takeView(this);
-    }
-
-    @Override protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-    }
-
-    @Override protected void onDetachedFromWindow() {
-        presenter.dropView(this);
-        super.onDetachedFromWindow();
+    public GalleryAdapter getAdapter() {
+        return adapter;
     }
 
     public void setAdapter(GalleryAdapter adapter) {
@@ -51,7 +38,23 @@ public class GalleryView extends BetterViewAnimator {
         setDisplayedChildId(R.id.gallery_grid);
     }
 
-    public GalleryAdapter getAdapter() {
-        return adapter;
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        presenter.dropView(this);
+        super.onDetachedFromWindow();
+    }
+
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        ButterKnife.inject(this);
+        adapter = new GalleryAdapter(getContext(), presenter.getPicasso());
+        setAdapter(adapter);
+        presenter.takeView(this);
     }
 }

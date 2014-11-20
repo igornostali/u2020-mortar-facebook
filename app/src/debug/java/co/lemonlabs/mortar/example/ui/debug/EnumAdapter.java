@@ -14,20 +14,14 @@ class EnumAdapter<T extends Enum<T>> extends BindableAdapter<T> {
     private final boolean showNull;
     private final int     nullOffset;
 
-    EnumAdapter(Context context, Class<T> enumType) {
-        this(context, enumType, false);
-    }
-
-    EnumAdapter(Context context, Class<T> enumType, boolean showNull) {
-        super(context);
-        this.enumConstants = enumType.getEnumConstants();
-        this.showNull = showNull;
-        this.nullOffset = showNull ? 1 : 0;
-    }
-
     @Override
     public final int getCount() {
         return enumConstants.length + nullOffset;
+    }
+
+    @Override
+    public final long getItemId(int position) {
+        return position;
     }
 
     @Override
@@ -37,11 +31,6 @@ class EnumAdapter<T extends Enum<T>> extends BindableAdapter<T> {
         }
 
         return enumConstants[position - nullOffset];
-    }
-
-    @Override
-    public final long getItemId(int position) {
-        return position;
     }
 
     @Override
@@ -62,5 +51,16 @@ class EnumAdapter<T extends Enum<T>> extends BindableAdapter<T> {
 
     protected String getName(T item) {
         return String.valueOf(item);
+    }
+
+    EnumAdapter(Context context, Class<T> enumType) {
+        this(context, enumType, false);
+    }
+
+    EnumAdapter(Context context, Class<T> enumType, boolean showNull) {
+        super(context);
+        this.enumConstants = enumType.getEnumConstants();
+        this.showNull = showNull;
+        this.nullOffset = showNull ? 1 : 0;
     }
 }

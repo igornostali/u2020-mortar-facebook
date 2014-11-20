@@ -16,11 +16,6 @@ public class MockGalleryService implements GalleryService {
 
     private final ServerDatabase serverDatabase;
 
-    @Inject
-    MockGalleryService(ServerDatabase serverDatabase) {
-        this.serverDatabase = serverDatabase;
-    }
-
     @Override
     public Observable<Gallery> listGallery(Section section, Sort sort, int page) {
         // Fetch desired section.
@@ -40,5 +35,10 @@ public class MockGalleryService implements GalleryService {
         SortUtil.sort(images, sort);
         images = images.subList(pageStart, pageEnd);
         return Observable.from(new Gallery(200, true, images));
+    }
+
+    @Inject
+    MockGalleryService(ServerDatabase serverDatabase) {
+        this.serverDatabase = serverDatabase;
     }
 }

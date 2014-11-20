@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <co.lemonlabs.mortar.example.ui.views.ViewStateView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/holo_orange_light">
+                                                    android:layout_width="match_parent"
+                                                    android:layout_height="match_parent"
+                                                    android:background="@android:color/holo_orange_light">
 
     <EditText
         android:id="@+id/must_provide_id_to_store_state"

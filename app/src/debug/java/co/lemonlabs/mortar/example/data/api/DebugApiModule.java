@@ -31,26 +31,31 @@ public final class DebugApiModule {
 
     @Provides
     @Singleton
-    MockRestAdapter provideMockRestAdapter(RestAdapter restAdapter, SharedPreferences preferences) {
-        MockRestAdapter mockRestAdapter = MockRestAdapter.from(restAdapter);
-        AndroidMockValuePersistence.install(mockRestAdapter, preferences);
-        return mockRestAdapter;
-    }
-
-    @Provides
-    @Singleton
     GalleryService provideGalleryService(IdlingGalleryServiceWrapper idlingWrapper) {
         return idlingWrapper;
     }
 
     @Provides
     @Singleton
-    IdlingGalleryServiceWrapper provideIdlingGalleryServiceWrapper(Application app, RestAdapter restAdapter, MockRestAdapter mockRestAdapter,
-                                                                   @IsMockMode boolean isMockMode, MockGalleryService mockService) {
-        return new IdlingGalleryServiceWrapper(app, (
+    IdlingGalleryServiceWrapper provideIdlingGalleryServiceWrapper(Application app,
+                                                                   RestAdapter restAdapter,
+                                                                   MockRestAdapter mockRestAdapter,
+                                                                   @IsMockMode boolean isMockMode,
+                                                                   MockGalleryService mockService) {
+        return new IdlingGalleryServiceWrapper(
+                app,
                 isMockMode
                         ? mockRestAdapter.create(GalleryService.class, mockService)
                         : restAdapter.create(GalleryService.class)
-        ));
+
+        );
+    }
+
+    @Provides
+    @Singleton
+    MockRestAdapter provideMockRestAdapter(RestAdapter restAdapter, SharedPreferences preferences) {
+        MockRestAdapter mockRestAdapter = MockRestAdapter.from(restAdapter);
+        AndroidMockValuePersistence.install(mockRestAdapter, preferences);
+        return mockRestAdapter;
     }
 }

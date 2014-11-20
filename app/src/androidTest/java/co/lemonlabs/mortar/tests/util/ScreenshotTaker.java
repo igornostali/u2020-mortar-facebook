@@ -22,9 +22,34 @@ import static co.lemonlabs.mortar.tests.util.Chmod.chmodPlusRWX;
  */
 public class ScreenshotTaker {
 
+    private static Class<?> windowManager;
+
+    static {
+        try {
+            String windowManagerClassName;
+            if (android.os.Build.VERSION.SDK_INT >= 17) {
+                windowManagerClassName = "android.view.WindowManagerGlobal";
+            } else {
+                windowManagerClassName = "android.view.WindowManagerImpl";
+            }
+            windowManager = Class.forName(windowManagerClassName);
+
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+    }
+
     private File   screenShotFolder;
     private String screenShotFileName;
     private String windowManagerString;
+
+    public ScreenshotTaker(File imgDir, String imgFile) {
+        screenShotFolder = imgDir;
+        screenShotFileName = imgFile;
+        setWindowManagerString();
+    }
 
     public static File obtainScreenshotDirectory(Context context) {
         try {
@@ -46,10 +71,60 @@ public class ScreenshotTaker {
         return System.currentTimeMillis() + Spoon.NAME_SEPARATOR + tag + Spoon.EXTENSION;
     }
 
-    public ScreenshotTaker(File imgDir, String imgFile) {
-        screenShotFolder = imgDir;
-        screenShotFileName = imgFile;
-        setWindowManagerString();
+    /**
+     * Returns the most recent DecorView
+     *
+     * @param views the views to check
+     * @return the most recent DecorView
+     */
+
+    public final View getRecentDecorView(View[] views) {
+        if (views == null) {
+            throw new RuntimeException("Error in getRecentDecorView: 0 views passed in.");
+        }
+
+        final View[] decorViews = new View[views.length];
+        int i = 0;
+        View view;
+
+        for (int j = 0; j < views.length; j++) {
+            view = views[j];
+            if (view != null && view.getClass().getName()
+                                    .equals("com.android.internal.policy.impl.PhoneWindow$DecorView")) {
+                decorViews[i] = view;
+                i++;
+            }
+        }
+        return getRecentContainer(decorViews);
+    }
+
+    /**
+     * Returns the WindorDecorViews shown on the screen.
+     *
+     * @return the WindorDecorViews shown on the screen
+     */
+
+    public View[] getWindowDecorViews() {
+
+        Field viewsField;
+        Field instanceField;
+        try {
+            viewsField = windowManager.getDeclaredField("mViews");
+            instanceField = windowManager.getDeclaredField(windowManagerString);
+            viewsField.setAccessible(true);
+            instanceField.setAccessible(true);
+            Object instance = instanceField.get(null);
+            return (View[]) viewsField.get(instance);
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public void takeScreenShot() throws Exception {
@@ -81,64 +156,6 @@ public class ScreenshotTaker {
         }
     }
 
-
-    /**
-     * Returns the WindorDecorViews shown on the screen.
-     *
-     * @return the WindorDecorViews shown on the screen
-     */
-
-    public View[] getWindowDecorViews()
-    {
-
-        Field viewsField;
-        Field instanceField;
-        try {
-            viewsField = windowManager.getDeclaredField("mViews");
-            instanceField = windowManager.getDeclaredField(windowManagerString);
-            viewsField.setAccessible(true);
-            instanceField.setAccessible(true);
-            Object instance = instanceField.get(null);
-            return (View[]) viewsField.get(instance);
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Returns the most recent DecorView
-     *
-     * @param views the views to check
-     * @return the most recent DecorView
-     */
-
-    public final View getRecentDecorView(View[] views) {
-        if (views == null) {
-            throw new RuntimeException("Error in getRecentDecorView: 0 views passed in.");
-        }
-
-        final View[] decorViews = new View[views.length];
-        int i = 0;
-        View view;
-
-        for (int j = 0; j < views.length; j++) {
-            view = views[j];
-            if (view != null && view.getClass().getName()
-                .equals("com.android.internal.policy.impl.PhoneWindow$DecorView")) {
-                decorViews[i] = view;
-                i++;
-            }
-        }
-        return getRecentContainer(decorViews);
-    }
-
     /**
      * Returns the most recent view container
      *
@@ -151,7 +168,7 @@ public class ScreenshotTaker {
         long drawingTime = 0;
         View view;
 
-        for(int i = 0; i < views.length; i++){
+        for (int i = 0; i < views.length; i++) {
             view = views[i];
             if (view != null && view.isShown() && view.hasWindowFocus() && view.getDrawingTime() > drawingTime) {
                 container = view;
@@ -160,26 +177,6 @@ public class ScreenshotTaker {
         }
         return container;
     }
-
-
-    private static Class<?> windowManager;
-    static {
-        try {
-            String windowManagerClassName;
-            if (android.os.Build.VERSION.SDK_INT >= 17) {
-                windowManagerClassName = "android.view.WindowManagerGlobal";
-            } else {
-                windowManagerClassName = "android.view.WindowManagerImpl";
-            }
-            windowManager = Class.forName(windowManagerClassName);
-
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        }
-    }
-
 
     /**
      * Sets the window manager string.
@@ -198,7 +195,9 @@ public class ScreenshotTaker {
     }
 
     /** Copied from Spoon */
-    /** Utility class for capturing screenshots for Spoon. */
+    /**
+     * Utility class for capturing screenshots for Spoon.
+     */
     public static final class Spoon {
         static final         String  SPOON_SCREENSHOTS = "spoon-screenshots";
         static final         String  NAME_SEPARATOR    = "_";
@@ -209,23 +208,18 @@ public class ScreenshotTaker {
         private static final Object  LOCK              = new Object();
         private static final Pattern TAG_VALIDATION    = Pattern.compile("[a-zA-Z0-9_-]+");
 
-        private static File obtainScreenshotDirectory(Context context, Thread currentThread) throws IllegalAccessException {
-            File screenshotsDir = context.getDir(SPOON_SCREENSHOTS, MODE_WORLD_READABLE);
-
-            StackTraceElement testClass = findTestClassTraceElement(currentThread.getStackTrace());
-            String className = testClass.getClassName().replaceAll("[^A-Za-z0-9._-]", "_");
-            File dirClass = new File(screenshotsDir, className);
-            File dirMethod = new File(dirClass, testClass.getMethodName());
-            createDir(dirMethod);
-            return dirMethod;
+        private Spoon() {
+            // No instances.
         }
 
-        /** Returns the test class element by looking at the method InstrumentationTestCase invokes. */
+        /**
+         * Returns the test class element by looking at the method InstrumentationTestCase invokes.
+         */
         static StackTraceElement findTestClassTraceElement(StackTraceElement[] trace) {
             for (int i = trace.length - 1; i >= 0; i--) {
                 StackTraceElement element = trace[i];
                 if (TEST_CASE_CLASS.equals(element.getClassName()) //
-                    && TEST_CASE_METHOD.equals(element.getMethodName())) {
+                        && TEST_CASE_METHOD.equals(element.getMethodName())) {
                     return trace[i - 3];
                 }
             }
@@ -258,8 +252,15 @@ public class ScreenshotTaker {
             }
         }
 
-        private Spoon() {
-            // No instances.
+        private static File obtainScreenshotDirectory(Context context, Thread currentThread) throws IllegalAccessException {
+            File screenshotsDir = context.getDir(SPOON_SCREENSHOTS, MODE_WORLD_READABLE);
+
+            StackTraceElement testClass = findTestClassTraceElement(currentThread.getStackTrace());
+            String className = testClass.getClassName().replaceAll("[^A-Za-z0-9._-]", "_");
+            File dirClass = new File(screenshotsDir, className);
+            File dirMethod = new File(dirClass, testClass.getMethodName());
+            createDir(dirMethod);
+            return dirMethod;
         }
     }
 

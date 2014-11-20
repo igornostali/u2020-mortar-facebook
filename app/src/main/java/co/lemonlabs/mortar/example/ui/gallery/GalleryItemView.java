@@ -25,11 +25,6 @@ public class GalleryItemView extends FrameLayout {
         super(context, attrs);
     }
 
-    @Override protected void onFinishInflate() {
-        super.onFinishInflate();
-        ButterKnife.inject(this);
-    }
-
     public void bindTo(Image item, Picasso picasso) {
         request = picasso.load(item.link);
         aspectRatio = 1f * item.width / item.height;
@@ -38,21 +33,28 @@ public class GalleryItemView extends FrameLayout {
         title.setText(item.title);
     }
 
-    @Override protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        ButterKnife.inject(this);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int mode = MeasureSpec.getMode(widthMeasureSpec);
-    if (mode != MeasureSpec.EXACTLY) {
-      throw new IllegalStateException("layout_width must be match_parent");
-    }
+        if (mode != MeasureSpec.EXACTLY) {
+            throw new IllegalStateException("layout_width must be match_parent");
+        }
 
-    int width = MeasureSpec.getSize(widthMeasureSpec);
-    // Honor aspect ratio for height but no larger than 2x width.
-    int height = Math.min((int) (width / aspectRatio), width * 2);
-    heightMeasureSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
-    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        // Honor aspect ratio for height but no larger than 2x width.
+        int height = Math.min((int) (width / aspectRatio), width * 2);
+        heightMeasureSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-    if (request != null) {
-      request.resize(width, height).centerCrop().into(image);
-      request = null;
+        if (request != null) {
+            request.resize(width, height).centerCrop().into(image);
+            request = null;
+        }
     }
-  }
 }

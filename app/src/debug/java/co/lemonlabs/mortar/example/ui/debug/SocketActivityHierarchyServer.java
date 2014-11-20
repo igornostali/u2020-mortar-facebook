@@ -99,48 +99,6 @@ public class SocketActivityHierarchyServer implements Runnable, ActivityHierarch
         mPort = SocketActivityHierarchyServer.VIEW_SERVER_DEFAULT_PORT;
     }
 
-    private static boolean writeValue(Socket client, String value) {
-        boolean result;
-        BufferedWriter out = null;
-        try {
-            OutputStream clientStream = client.getOutputStream();
-            out = new BufferedWriter(new OutputStreamWriter(clientStream), 8 * 1024);
-            out.write(value);
-            out.write("\n");
-            out.flush();
-            result = true;
-        } catch (Exception e) {
-            result = false;
-        } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    result = false;
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Starts the server.
-     *
-     * @return True if the server was successfully created, or false if it already exists.
-     * @throws java.io.IOException If the server cannot be created.
-     */
-    public boolean start() throws IOException {
-        if (mThread != null) {
-            return false;
-        }
-
-        mThread = new Thread(this, "Local View Server [port=" + mPort + "]");
-        mThreadPool = Executors.newFixedThreadPool(VIEW_SERVER_MAX_CONNECTIONS);
-        mThread.start();
-
-        return true;
-    }
-
     @Override
     public void onActivityCreated(Activity activity, Bundle bundle) {
         String name = activity.getTitle().toString();
@@ -224,9 +182,51 @@ public class SocketActivityHierarchyServer implements Runnable, ActivityHierarch
         }
     }
 
-    private void fireWindowsChangedEvent() {
-        for (WindowListener listener : mListeners) {
-            listener.windowsChanged();
+    /**
+     * Starts the server.
+     *
+     * @return True if the server was successfully created, or false if it already exists.
+     * @throws java.io.IOException If the server cannot be created.
+     */
+    public boolean start() throws IOException {
+        if (mThread != null) {
+            return false;
+        }
+
+        mThread = new Thread(this, "Local View Server [port=" + mPort + "]");
+        mThreadPool = Executors.newFixedThreadPool(VIEW_SERVER_MAX_CONNECTIONS);
+        mThread.start();
+
+        return true;
+    }
+
+    private static boolean writeValue(Socket client, String value) {
+        boolean result;
+        BufferedWriter out = null;
+        try {
+            OutputStream clientStream = client.getOutputStream();
+            out = new BufferedWriter(new OutputStreamWriter(clientStream), 8 * 1024);
+            out.write(value);
+            out.write("\n");
+            out.flush();
+            result = true;
+        } catch (Exception e) {
+            result = false;
+        } finally {
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    result = false;
+                }
+            }
+        }
+        return result;
+    }
+
+    private void addWindowListener(WindowListener listener) {
+        if (!mListeners.contains(listener)) {
+            mListeners.add(listener);
         }
     }
 
@@ -236,9 +236,9 @@ public class SocketActivityHierarchyServer implements Runnable, ActivityHierarch
         }
     }
 
-    private void addWindowListener(WindowListener listener) {
-        if (!mListeners.contains(listener)) {
-            mListeners.add(listener);
+    private void fireWindowsChangedEvent() {
+        for (WindowListener listener : mListeners) {
+            listener.windowsChanged();
         }
     }
 
@@ -247,28 +247,36 @@ public class SocketActivityHierarchyServer implements Runnable, ActivityHierarch
     }
 
     private interface WindowListener {
-        void windowsChanged();
-
         void focusChanged();
+
+        void windowsChanged();
     }
 
     private static class UncloseableOutputStream extends OutputStream {
         private final OutputStream mStream;
 
-        UncloseableOutputStream(OutputStream stream) {
-            mStream = stream;
-        }
-
         public void close() throws IOException {
             // Don't close the stream
         }
 
-        public boolean equals(Object o) {
-            return mStream.equals(o);
-        }
-
         public void flush() throws IOException {
             mStream.flush();
+        }
+
+        public void write(byte[] buffer) throws IOException {
+            mStream.write(buffer);
+        }
+
+        public void write(byte[] buffer, int offset, int count) throws IOException {
+            mStream.write(buffer, offset, count);
+        }
+
+        public void write(int oneByte) throws IOException {
+            mStream.write(oneByte);
+        }
+
+        public boolean equals(Object o) {
+            return mStream.equals(o);
         }
 
         public int hashCode() {
@@ -279,16 +287,8 @@ public class SocketActivityHierarchyServer implements Runnable, ActivityHierarch
             return mStream.toString();
         }
 
-        public void write(byte[] buffer, int offset, int count) throws IOException {
-            mStream.write(buffer, offset, count);
-        }
-
-        public void write(byte[] buffer) throws IOException {
-            mStream.write(buffer);
-        }
-
-        public void write(int oneByte) throws IOException {
-            mStream.write(oneByte);
+        UncloseableOutputStream(OutputStream stream) {
+            mStream = stream;
         }
     }
 
@@ -302,6 +302,13 @@ public class SocketActivityHierarchyServer implements Runnable, ActivityHierarch
             mClient = client;
             mNeedWindowListUpdate = false;
             mNeedFocusedWindowUpdate = false;
+        }
+
+        public void windowsChanged() {
+            synchronized (mLock) {
+                mNeedWindowListUpdate = true;
+                mLock.notifyAll();
+            }
         }
 
         public void run() {
@@ -361,6 +368,122 @@ public class SocketActivityHierarchyServer implements Runnable, ActivityHierarch
             }
         }
 
+        public void focusChanged() {
+            synchronized (mLock) {
+                mNeedFocusedWindowUpdate = true;
+                mLock.notifyAll();
+            }
+        }
+
+        private View findWindow(int hashCode) {
+            if (hashCode == -1) {
+                View window = null;
+                mWindowsLock.readLock().lock();
+                try {
+                    window = mFocusedWindow;
+                } finally {
+                    mWindowsLock.readLock().unlock();
+                }
+                return window;
+            }
+
+            mWindowsLock.readLock().lock();
+            try {
+                for (Entry<View, String> entry : mWindows.entrySet()) {
+                    if (System.identityHashCode(entry.getKey()) == hashCode) {
+                        return entry.getKey();
+                    }
+                }
+            } finally {
+                mWindowsLock.readLock().unlock();
+            }
+
+            return null;
+        }
+
+        private boolean getFocusedWindow(Socket client) {
+            boolean result = true;
+            String focusName = null;
+
+            BufferedWriter out = null;
+            try {
+                OutputStream clientStream = client.getOutputStream();
+                out = new BufferedWriter(new OutputStreamWriter(clientStream), 8 * 1024);
+
+                View focusedWindow = null;
+
+                mFocusLock.readLock().lock();
+                try {
+                    focusedWindow = mFocusedWindow;
+                } finally {
+                    mFocusLock.readLock().unlock();
+                }
+
+                if (focusedWindow != null) {
+                    mWindowsLock.readLock().lock();
+                    try {
+                        focusName = mWindows.get(mFocusedWindow);
+                    } finally {
+                        mWindowsLock.readLock().unlock();
+                    }
+
+                    out.write(Integer.toHexString(System.identityHashCode(focusedWindow)));
+                    out.write(' ');
+                    out.append(focusName);
+                }
+                out.write('\n');
+                out.flush();
+            } catch (Exception e) {
+                result = false;
+            } finally {
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        result = false;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private boolean listWindows(Socket client) {
+            boolean result = true;
+            BufferedWriter out = null;
+
+            try {
+                mWindowsLock.readLock().lock();
+
+                OutputStream clientStream = client.getOutputStream();
+                out = new BufferedWriter(new OutputStreamWriter(clientStream), 8 * 1024);
+
+                for (Entry<View, String> entry : mWindows.entrySet()) {
+                    out.write(Integer.toHexString(System.identityHashCode(entry.getKey())));
+                    out.write(' ');
+                    out.append(entry.getValue());
+                    out.write('\n');
+                }
+
+                out.write("DONE.\n");
+                out.flush();
+            } catch (Exception e) {
+                result = false;
+            } finally {
+                mWindowsLock.readLock().unlock();
+
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        result = false;
+                    }
+                }
+            }
+
+            return result;
+        }
+
         private boolean windowCommand(Socket client, String command, String parameters) {
             boolean success = true;
             BufferedWriter out = null;
@@ -416,129 +539,6 @@ public class SocketActivityHierarchyServer implements Runnable, ActivityHierarch
             return success;
         }
 
-        private View findWindow(int hashCode) {
-            if (hashCode == -1) {
-                View window = null;
-                mWindowsLock.readLock().lock();
-                try {
-                    window = mFocusedWindow;
-                } finally {
-                    mWindowsLock.readLock().unlock();
-                }
-                return window;
-            }
-
-            mWindowsLock.readLock().lock();
-            try {
-                for (Entry<View, String> entry : mWindows.entrySet()) {
-                    if (System.identityHashCode(entry.getKey()) == hashCode) {
-                        return entry.getKey();
-                    }
-                }
-            } finally {
-                mWindowsLock.readLock().unlock();
-            }
-
-            return null;
-        }
-
-        private boolean listWindows(Socket client) {
-            boolean result = true;
-            BufferedWriter out = null;
-
-            try {
-                mWindowsLock.readLock().lock();
-
-                OutputStream clientStream = client.getOutputStream();
-                out = new BufferedWriter(new OutputStreamWriter(clientStream), 8 * 1024);
-
-                for (Entry<View, String> entry : mWindows.entrySet()) {
-                    out.write(Integer.toHexString(System.identityHashCode(entry.getKey())));
-                    out.write(' ');
-                    out.append(entry.getValue());
-                    out.write('\n');
-                }
-
-                out.write("DONE.\n");
-                out.flush();
-            } catch (Exception e) {
-                result = false;
-            } finally {
-                mWindowsLock.readLock().unlock();
-
-                if (out != null) {
-                    try {
-                        out.close();
-                    } catch (IOException e) {
-                        result = false;
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        private boolean getFocusedWindow(Socket client) {
-            boolean result = true;
-            String focusName = null;
-
-            BufferedWriter out = null;
-            try {
-                OutputStream clientStream = client.getOutputStream();
-                out = new BufferedWriter(new OutputStreamWriter(clientStream), 8 * 1024);
-
-                View focusedWindow = null;
-
-                mFocusLock.readLock().lock();
-                try {
-                    focusedWindow = mFocusedWindow;
-                } finally {
-                    mFocusLock.readLock().unlock();
-                }
-
-                if (focusedWindow != null) {
-                    mWindowsLock.readLock().lock();
-                    try {
-                        focusName = mWindows.get(mFocusedWindow);
-                    } finally {
-                        mWindowsLock.readLock().unlock();
-                    }
-
-                    out.write(Integer.toHexString(System.identityHashCode(focusedWindow)));
-                    out.write(' ');
-                    out.append(focusName);
-                }
-                out.write('\n');
-                out.flush();
-            } catch (Exception e) {
-                result = false;
-            } finally {
-                if (out != null) {
-                    try {
-                        out.close();
-                    } catch (IOException e) {
-                        result = false;
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        public void windowsChanged() {
-            synchronized (mLock) {
-                mNeedWindowListUpdate = true;
-                mLock.notifyAll();
-            }
-        }
-
-        public void focusChanged() {
-            synchronized (mLock) {
-                mNeedFocusedWindowUpdate = true;
-                mLock.notifyAll();
-            }
-        }
-
         private boolean windowManagerAutolistLoop() {
             addWindowListener(this);
             BufferedWriter out = null;
@@ -583,5 +583,6 @@ public class SocketActivityHierarchyServer implements Runnable, ActivityHierarch
             }
             return true;
         }
+
     }
 }

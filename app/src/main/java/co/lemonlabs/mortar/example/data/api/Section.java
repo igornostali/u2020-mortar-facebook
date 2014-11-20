@@ -8,12 +8,12 @@ public enum Section {
 
     public final String value;
 
-    Section(String value) {
-        this.value = value;
-    }
-
     @Override
     public String toString() {
         return value;
+    }
+
+    Section(String value) {
+        this.value = value;
     }
 }

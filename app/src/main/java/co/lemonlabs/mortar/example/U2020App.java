@@ -19,11 +19,24 @@ public class U2020App extends Application {
 
     public static final String MORTAR_SCOPE = "mortar_scope";
 
-    private MortarScope applicationScope;
-
     @Inject ActivityHierarchyServer activityHierarchyServer;
 
-    @Override public void onCreate() {
+    private MortarScope             applicationScope;
+
+    public static U2020App get(Context context) {
+        return (U2020App) context.getApplicationContext();
+    }
+
+    @Override
+    public Object getSystemService(String name) {
+        if (Mortar.isScopeSystemService(name)) {
+            return applicationScope;
+        }
+        return super.getSystemService(name);
+    }
+
+    @Override
+    public void onCreate() {
         super.onCreate();
 
         if (BuildConfig.DEBUG) {
@@ -38,6 +51,11 @@ public class U2020App extends Application {
         registerActivityLifecycleCallbacks(activityHierarchyServer);
     }
 
+    public void rebuildOjectGraphAndInject() {
+        Mortar.destroyRootScope(applicationScope);
+        buildObjectGraphAndInject();
+    }
+
     private void buildObjectGraphAndInject() {
         long start = System.nanoTime();
 
@@ -47,22 +65,5 @@ public class U2020App extends Application {
 
         long diff = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         Timber.i("Global object graph creation took %sms", diff);
-    }
-
-    public void rebuildOjectGraphAndInject() {
-        Mortar.destroyRootScope(applicationScope);
-        buildObjectGraphAndInject();
-    }
-
-    @Override
-    public Object getSystemService(String name) {
-        if (Mortar.isScopeSystemService(name)) {
-            return applicationScope;
-        }
-        return super.getSystemService(name);
-    }
-
-    public static U2020App get(Context context) {
-        return (U2020App) context.getApplicationContext();
     }
 }

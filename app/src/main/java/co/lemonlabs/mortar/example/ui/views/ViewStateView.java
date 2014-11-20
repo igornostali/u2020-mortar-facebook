@@ -19,14 +19,14 @@ public class ViewStateView extends FractionalFrameLayout {
     }
 
     @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-        presenter.takeView(this);
-    }
-
-    @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         presenter.dropView(this);
+    }
+
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        presenter.takeView(this);
     }
 }

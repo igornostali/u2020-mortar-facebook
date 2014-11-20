@@ -24,16 +24,16 @@ public class NestedView extends FrameLayout {
     }
 
     @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        presenter.dropView(this);
+    }
+
+    @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
         ButterKnife.inject(this);
         presenter.takeView(this);
         childView.setPresenter(presenter.getChildPresenter());
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        presenter.dropView(this);
     }
 }

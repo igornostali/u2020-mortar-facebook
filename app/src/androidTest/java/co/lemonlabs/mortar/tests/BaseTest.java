@@ -17,14 +17,14 @@ import retrofit.MockRestAdapter;
 
 public class BaseTest extends ActivityInstrumentationTestCase2<MainActivity> {
 
-    @Inject MockRestAdapter             mockAdapter;
-    @Inject IdlingDownloaderWrapper     downloader;
-    @Inject IdlingGalleryServiceWrapper api;
-    @Inject Flow                        flow;
-    @Inject ActionBarPresenter          actionBar;
-    @Inject DrawerPresenter             drawer;
+    protected MainActivity                activity;
 
-    protected MainActivity activity;
+    @Inject   MockRestAdapter             mockAdapter;
+    @Inject   IdlingDownloaderWrapper     downloader;
+    @Inject   IdlingGalleryServiceWrapper api;
+    @Inject   Flow                        flow;
+    @Inject   ActionBarPresenter          actionBar;
+    @Inject   DrawerPresenter             drawer;
 
     public BaseTest() {
         super(MainActivity.class);
@@ -36,9 +36,9 @@ public class BaseTest extends ActivityInstrumentationTestCase2<MainActivity> {
         activity = getActivity();
 
         activity.getMortarScope()
-            .getObjectGraph()
-            .plus(new TestModule())
-            .inject(this);
+                .getObjectGraph()
+                .plus(new TestModule())
+                .inject(this);
 
         Espresso.registerIdlingResources(api, downloader);
 
@@ -52,13 +52,14 @@ public class BaseTest extends ActivityInstrumentationTestCase2<MainActivity> {
         Spoon.screenshot(activity, description.replaceAll("[^a-zA-Z0-9_-]", "_"));
     }
 
-
     @dagger.Module(
-        complete = false,
-        library = true,
-        injects = {
-            BaseTest.class,
-            FlowTest.class
-        }
-    ) class TestModule {}
+            complete = false,
+            library = true,
+            injects = {
+                    BaseTest.class,
+                    FlowTest.class
+            }
+    )
+    class TestModule {
+    }
 }

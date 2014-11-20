@@ -16,13 +16,13 @@ import dagger.Provides;
 public class DebugUiModule {
     @Provides
     @Singleton
-    AppContainer provideAppContainer(DebugAppContainer debugAppContainer) {
-        return debugAppContainer;
+    ActivityHierarchyServer provideActivityHierarchyServer() {
+        return new SocketActivityHierarchyServer();
     }
 
     @Provides
     @Singleton
-    ActivityHierarchyServer provideActivityHierarchyServer() {
-        return new SocketActivityHierarchyServer();
+    AppContainer provideAppContainer(DebugAppContainer debugAppContainer) {
+        return debugAppContainer;
     }
 }

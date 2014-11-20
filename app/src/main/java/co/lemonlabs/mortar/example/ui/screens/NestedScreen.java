@@ -28,63 +28,15 @@ public class NestedScreen implements Blueprint {
         return new Module();
     }
 
-    @dagger.Module(
-        injects = {
-            NestedView.class,
-            NestedChildView.class
-        },
-        addsTo = CorePresenter.Module.class,
-        library = true
-    )
-
-    public static class Module {
-
-        public Module() {}
-    }
-
-    @Singleton
-    public static class Presenter extends ViewPresenter<NestedView> {
-
-        @Inject ChildPresenter childPresenter;
-
-        private final ActionBarPresenter actionBar;
-
-        @Inject Presenter(ActionBarPresenter actionBar) {
-            this.actionBar = actionBar;
-        }
-
-        @Override
-        public void onLoad(Bundle savedInstanceState) {
-            super.onLoad(savedInstanceState);
-            if (getView() == null) return;
-
-            actionBar.setConfig(new ActionBarPresenter.Config(
-                true,
-                true,
-                "Nested Presenters",
-                new ActionBarPresenter.MenuAction("Animate", new Action0() {
-                    @Override public void call() {
-                        if (getView() != null) {
-                            toggleChildAnimation();
-                        }
-                    }
-                })
-            ));
-        }
-
-        public void toggleChildAnimation() {
-            childPresenter.toggleAnimation();
-        }
-
-        public ChildPresenter getChildPresenter() {
-            return childPresenter;
-        }
-    }
-
     @Singleton
     public static class ChildPresenter extends ViewPresenter<NestedChildView> {
 
-        @Inject ChildPresenter() {
+        public void toggleAnimation() {
+            getView().toggleAnimation();
+        }
+
+        @Inject
+        ChildPresenter() {
         }
 
         @Override
@@ -94,8 +46,60 @@ public class NestedScreen implements Blueprint {
             toggleAnimation();
         }
 
-        public void toggleAnimation() {
-            getView().toggleAnimation();
+    }
+
+    @dagger.Module(
+            injects = {
+                    NestedView.class,
+                    NestedChildView.class
+            },
+            addsTo = CorePresenter.Module.class,
+            library = true
+    )
+
+    public static class Module {
+
+        public Module() {
+        }
+    }
+
+    @Singleton
+    public static class Presenter extends ViewPresenter<NestedView> {
+
+        private final ActionBarPresenter actionBar;
+        @Inject       ChildPresenter     childPresenter;
+
+        public ChildPresenter getChildPresenter() {
+            return childPresenter;
+        }
+
+        @Override
+        public void onLoad(Bundle savedInstanceState) {
+            super.onLoad(savedInstanceState);
+            if (getView() == null) return;
+
+            actionBar.setConfig(new ActionBarPresenter.Config(
+                    true,
+                    true,
+                    "Nested Presenters",
+                    new ActionBarPresenter.MenuAction("Animate", new Action0() {
+                        @Override
+                        public void call() {
+                            if (getView() != null) {
+                                toggleChildAnimation();
+                            }
+                        }
+                    })
+            ));
+        }
+
+        public void toggleChildAnimation() {
+            childPresenter.toggleAnimation();
+        }
+
+        @Inject
+        Presenter(ActionBarPresenter actionBar) {
+            this.actionBar = actionBar;
         }
     }
 }

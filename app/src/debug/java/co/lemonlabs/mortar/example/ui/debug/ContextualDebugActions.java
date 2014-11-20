@@ -39,17 +39,6 @@ public class ContextualDebugActions implements ViewGroup.OnHierarchyChangeListen
         }
     }
 
-    private void putAction(Class<? extends View> view, DebugAction<? extends View> action) {
-        Timber.d("Adding %s action for %s.", action.getClass().getSimpleName(), view.getSimpleName());
-
-        List<DebugAction<? extends View>> actions = actionMap.get(view);
-        if (actions == null) {
-            actions = new ArrayList<>(2);
-            actionMap.put(view, actions);
-        }
-        actions.add(action);
-    }
-
     @Override
     public void onChildViewAdded(View parent, View child) {
         List<DebugAction<? extends View>> actions = actionMap.get(child.getClass());
@@ -93,6 +82,17 @@ public class ContextualDebugActions implements ViewGroup.OnHierarchyChangeListen
         return button;
     }
 
+    private void putAction(Class<? extends View> view, DebugAction<? extends View> action) {
+        Timber.d("Adding %s action for %s.", action.getClass().getSimpleName(), view.getSimpleName());
+
+        List<DebugAction<? extends View>> actions = actionMap.get(view);
+        if (actions == null) {
+            actions = new ArrayList<>(2);
+            actionMap.put(view, actions);
+        }
+        actions.add(action);
+    }
+
     private void updateContextualVisibility() {
         int visibility = contextualListView.getChildCount() > 0 ? View.VISIBLE : View.GONE;
         contextualTitleView.setVisibility(visibility);
@@ -102,8 +102,8 @@ public class ContextualDebugActions implements ViewGroup.OnHierarchyChangeListen
     public interface DebugAction<T extends View> {
         String name();
 
-        Class<T> viewClass();
-
         void run(T view);
+
+        Class<T> viewClass();
     }
 }
