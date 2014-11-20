@@ -1,8 +1,24 @@
-.gradle
-/local.properties
+build
+
+# Ignore MAC hidden folders
 .DS_Store
-.idea
+
+# Ignore GRADLE wrapper
+.gradle
+
+.idea/**/*
+!.idea/codeStyleSettings.xml
+
+# Ignore all IDEA project files
 *.iml
+*.eml
+
+# Ignore all Eclipse project files
+.project
+.classpath
+
+# Ignore all local configurations
+local.properties
 gradle.properties
-/build
+
 
