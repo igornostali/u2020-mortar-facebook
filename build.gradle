@@ -6,18 +6,18 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.14.2'
+        classpath 'com.android.tools.build:gradle:0.14.4'
     }
 
     ext.app = [
-            buildVersion : [
+            buildVersion: [
                     major: 0,
                     minor: 0,
                     patch: 0
             ],
-            info : [
-                    gitSha   : 'git rev-parse --short HEAD'.execute([], project.rootDir).text.trim(),
-                    buildTime: new Date().format("yyyy-MM-dd'T'HH:mm'Z'", TimeZone.getTimeZone("UTC"))
+            info        : [
+                    buildTime  : new Date().format("yyyy-MM-dd'T'HH:mm'Z'", TimeZone.getTimeZone("UTC")),
+                    buildGitSha: System.getenv('PATH').toLowerCase().contains('git') ? 'git rev-parse --short HEAD'.execute([], project.rootDir).text.trim() : 'none'
             ]
     ]
 
